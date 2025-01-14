@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta name="Viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="Author" content="逸笙, ysun">
+    <title>Technology tree of The wild darkness</title>
+    <style>
+        .logo {
+            animation: breathing 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes breathing {
+            0% {
+                border: 4px solid rgba(200, 200, 200, 0);
+                box-shadow: 0 0 0 rgba(200, 200, 200, 0), 0 0 0 rgba(200, 200, 200, 0) inset;
+            }
+
+            100% {
+                border: 4px solid rgba(50, 50, 50, 1);
+                box-shadow: 0 0 10px rgba(200, 200, 200, 0.8), 0 0 5px rgba(200, 200, 200, 0.4) inset;
+            }
+        }
+
+        .clickLogo {
+            animation: breathing1 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes breathing1 {
+            0% {
+                border: 1px solid rgba(200, 0, 0, 0);
+                box-shadow: 0 0 0 rgba(200, 0, 0, 0), 0 0 0 rgba(200, 0, 0, 0) inset;
+            }
+
+            100% {
+                border: 1px solid rgba(200, 50, 50, 1);
+                box-shadow: 5px 5px 5px rgba(150, 50, 50, 0.8), 0 0 5px rgba(150, 50, 50, 0.4) inset;
+            }
+        }
+    </style>
+</head>
+
+<body style="margin: 0px; overflow: hidden;">
+    <table id="head" style="position: absolute; display: block; width: 100%; min-height: 100vh; background: rgba(200, 200, 200, 0.85);">
+        <tr>
+            <td style="display: contents;" onclick="showDiscription();">
+                <img class="logo" src="favicon.ico" alt="Logo" width="40" height="40">
+            </td>
+            <td id="settingAndDiscriptionTD" style="padding: 5px 0 0 0;">
+                <span style="display: block; overflow: auto; height: 100vh;">
+                    <div id="settingAndDiscription"></div>
+                    <div id="err1"></div>
+                </span>
+            </td>
+        </tr>
+    </table>
+    <canvas id="main" style="width: 100%; height: 100%;"></canvas>
+    <div id="images" style="display: none;"></div>
+    <div id="languageStore" style="display: none;"></div>
+    <div id="configStore" style="display: none;"></div>
+    <script id="language" type="text/javascript"></script>
+    <script id="config" type="text/javascript"></script>
+    <script>
+        //document.documentElement.lang = navigator.language;
+        //document.getElementById("err1").innerHTML = navigator.appVersion + "】<br>" + navigator.userAgent + "】<br>" + navigator.vendor;
+        //document.body.style.margin = "0px";
+        document.onselectstart = e => {
+            e.preventDefault(); // 阻止默认行为，禁止选择文字
+        };
+        document.oncontextmenu = e => {
+            e.preventDefault(); // 阻止菜单
+        };
+        //document.ontouchstart = e => {
+        //    if (e.touches.length > 1) e.preventDefault();
+        //}
+        document.documentElement.addEventListener('touchstart', function (e) {
+            if (e.touches.length > 1) e.preventDefault();
+        }, {
+            passive: false
+        });
+        class block {
+            name = "";
+            base = ""; // 基于几本
+            Requires = []; // 前置科技
+            HiddenRequires = []; // 隐藏前置科技
+            Blueprint = []; // 建造这个需要物品
+            Unlock = []; // 解锁
+            position = { x: 0, y: 0 };
+            pos = { x: 0, y: 0, w: 0, h: 0 };
+        }
+        class Structures extends block {
+            Craft = []; // 能制造物品
+            UpgradeFrom = ""; // 从升级
+            Upgrade = ""; // 升级到
+        }
+        class RuinsofLight extends Structures {
+            Map = ""; // 所在地图
+        }
+        class Items extends block {
+        }
+
+        var select1, select2;
+        var dataRuinsofLight, dataStructures, dataTools;
+        var blocks = new Object(), blocks1, blockTree, lightLines;
+        var showImage = false;
+        var difficultyLevels = ["standard", "difficult"];
+        var difficultyLevel = difficultyLevels[0], difficultyLevel1 = "";
+        var languages = { "en": "English", "zh-cn": "简体中文", "zh-tw": "繁體中文" };
+        var language = Object.keys(languages)[0], language1 = "";
+        var dataTranslation = null;
+        var rightSide_R = 0, rightSide_S = 0, rightSide_I = 0;
+        changeLanguage();
+
+        function loadImages(c) {
+            if (c) showImage = c.checked;
+            if (showImage) {
+                let div1 = document.getElementById("images");
+                Object.keys(blocks).forEach(e => {
+                    let s = e;
+                    if (e in dataRuinsofLight || e.substr(e.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
+                        s = e.substr(0, e.lastIndexOf(" "));
+                    }
+                    if (!document.getElementById(s)) {
+                        let img = document.createElement("img");
+                        img.src = "images/".concat(s).concat(".png");
+                        img.id = s;
+                        img.alt = "";
+                        div1.appendChild(img);
+                        img.onload = () => {
+                            img.alt = "loaded";
+                        }
+                    }
+                });
+            }
+        }
+        function changeDifficultyLevel(level) {
+            difficultyLevel = level;
+            loadConfig();
+        }
+        function changeLanguage(lang) {
+            dataTranslation = null;
+            if (lang != null) {
+                language = lang;
+            } else {
+                lang = navigator.language.toLowerCase();
+                if (Object.keys(languages).indexOf(lang) > -1) language = lang;
+                else {
+                    lang = lang.substr(0, lang.indexOf("-"));
+                    for (let i = 0; i < Object.keys(languages).length; i++) {
+                        if (Object.keys(languages)[i].substr(0, lang.indexOf("-")) == lang) lang = Object.keys(languages)[i];
+                    }
+                    if (Object.keys(languages).indexOf(lang) > -1) language = lang;
+                    else language = Object.keys(languages)[0];
+                }
+            }
+            document.documentElement.lang = language;
+            let div1 = document.getElementById("settingAndDiscription");
+            div1.innerHTML = "";
+            div1.appendChild(document.createTextNode("Language:"));
+            let langselect = document.createElement("select");
+            langselect.setAttribute("onchange", "changeLanguage(this.value);");
+            div1.appendChild(langselect);
+            for (let i = 0; i < Object.keys(languages).length; i++) {
+                l = Object.keys(languages)[i];
+                let option1 = document.createElement("option");
+                option1.value = l;
+                option1.text = languages[l];
+                langselect.appendChild(option1);
+                if (language == l) langselect.selectedIndex = i;
+            }
+            div1.appendChild(document.createElement("br"));
+
+            if (language1 != "") {
+                if (document.getElementById("language_" + language1) == null) {
+                    let cache = document.createElement("div");
+                    cache.id = "language_" + language1;
+                    document.getElementById("languageStore").appendChild(cache);
+                }
+                document.getElementById("language_" + language1).innerHTML = document.getElementById("language").innerHTML;
+            }
+            document.getElementById("language").remove();
+            language1 = language;
+            let languageDiv = document.createElement("script");
+            languageDiv.id = "language";
+            languageDiv.type = "text/javascript";
+            document.body.appendChild(languageDiv);
+            if (document.getElementById("language_" + language) != null) {
+                languageDiv.text = document.getElementById("language_" + language).innerHTML;
+                rebuildDescription();
+            } else {
+                if (language != Object.keys(languages)[0]) {
+                    let url = language + ".js";
+                    let xhr = new XMLHttpRequest;
+                    xhr.open("GET", url);
+                    xhr.onload = function (e) {
+                        if (xhr.status == 200) {
+                            languageDiv.text = xhr.responseText;
+                            let loading = setInterval(() => {
+                                if (Object.keys(dataTranslation).length > 0) {
+                                    clearInterval(loading);
+                                    rebuildDescription();
+                                }
+                            }, 100);
+                        } else {
+                            console.log(xhr.response);
+                        }
+                    }
+                    xhr.send(null);
+                } else {
+                    rebuildDescription();
+                }
+            }
+            function rebuildDescription() {
+                // click logo
+                //document.createTextNode(translate("Click the Logo on left to close/open the description."));
+                let clickLogo = document.createElement("span");
+                clickLogo.innerHTML = translate("Click the Logo on left to close/open the description.");
+                clickLogo.setAttribute("class", "clickLogo");
+                clickLogo.style.color = "#de4689";
+                div1.appendChild(clickLogo);
+                div1.appendChild(document.createElement("br"));
+                div1.appendChild(document.createElement("br"));
+                // show images
+                let label1 = document.createElement("label");
+                div1.appendChild(label1);
+                let input1 = document.createElement("input");
+                input1.type = "checkbox";
+                input1.id = "showImage";
+                input1.name = "showImage";
+                input1.setAttribute("onclick", "loadImages(this);");
+                if (showImage) input1.setAttribute("checked", "");
+                label1.appendChild(input1);
+                label1.appendChild(document.createTextNode(translate("Show picture in box.")));
+                /*div1.appendChild(document.createTextNode(" ("));
+                let a1 = document.createElement("a");
+                a1.href = "https://the-wild-darkness.fandom.com";
+                a1.text = "https://the-wild-darkness.fandom.com";
+                div1.appendChild(a1);
+                div1.appendChild(document.createTextNode(")"));*/
+                div1.appendChild(document.createElement("br"));
+                // difficult level
+                div1.appendChild(document.createTextNode(translate("Difficulty Level")));
+                div1.appendChild(document.createTextNode(":"));
+                difficultyLevels.forEach(difficulty => {
+                    let label1 = document.createElement("label");
+                    div1.appendChild(label1);
+                    let input1 = document.createElement("input");
+                    input1.type = "radio";
+                    input1.name = "difficultyLevel";
+                    input1.setAttribute("onclick", "changeDifficultyLevel(this.value);");
+                    input1.value = difficulty;
+                    if (difficultyLevel == difficulty) input1.setAttribute("checked", "");
+                    label1.appendChild(input1);
+                    label1.appendChild(document.createTextNode(translate(difficulty)));
+                });
+                div1.appendChild(document.createElement("br"));
+                // input to fix
+                input1 = document.createElement("input");
+                input1.id = "select1";
+                input1.type = "text";
+                input1.setAttribute("list", "select2");
+                input1.placeholder = translate("Input and fixed");
+                input1.setAttribute("onchange", "scrollCenter();");
+                div1.appendChild(input1);
+                let datalist1 = document.createElement("datalist");
+                datalist1.id = "select2";
+                div1.appendChild(datalist1);
+                let button1 = document.createElement("button");
+                button1.setAttribute("onclick", "document.getElementById('select1').value = '';");
+                button1.innerHTML = translate("clear fixing");
+                div1.appendChild(button1);
+                div1.appendChild(document.createElement("br"));
+                // description
+                let span1 = document.createElement("span");
+                div1.appendChild(span1);
+                span1.appendChild(document.createTextNode(translate("Drag to move image, wheel or two fingers to zoom in or out.")));
+                span1.appendChild(document.createElement("br"));
+                span1.appendChild(document.createTextNode(translate("Show the technology when hovering on a block.")));
+                span1.appendChild(document.createElement("br"));
+                span1.appendChild(document.createTextNode(translate("Input an exactly name in the input box to fix a item in center.")));
+                span1.appendChild(document.createElement("br"));
+                span1.appendChild(document.createTextNode(translate("Color") + ": "));
+                let span2 = document.createElement("span");
+                span1.appendChild(span2);
+                span2.style.color = "red";
+                span2.innerHTML = translate("Red");
+                span1.appendChild(document.createTextNode(": " + translate("Required") + "; "));
+                span2 = document.createElement("span");
+                span1.appendChild(span2);
+                span2.style.color = "red";
+                span2.innerHTML = translate("Red");
+                span1.appendChild(document.createTextNode(" " + translate("Dash") + ": " + translate("need its craft") + "; "));
+                span2 = document.createElement("span");
+                span1.appendChild(span2);
+                span2.style.color = "cyan";
+                span2.innerHTML = translate("Cyan");
+                span1.appendChild(document.createTextNode(": " + translate("upgrade from") + "; "));
+                span2 = document.createElement("span");
+                span1.appendChild(span2);
+                span2.style.color = "blue";
+                span2.innerHTML = translate("Blue");
+                span1.appendChild(document.createTextNode(": " + translate("upgrade to") + "; "));
+                span2 = document.createElement("span");
+                span1.appendChild(span2);
+                span2.style.color = "green";
+                span2.innerHTML = translate("Green");
+                span1.appendChild(document.createTextNode(": " + translate("unlock") + "."));
+                //span1.appendChild(document.createElement("br"));
+            }
+            loadConfig();
+        }
+
+        function loadConfig() {
+            blocks = new Object();
+            blockTree = new Object();
+            lightLines = new Object();
+            if (difficultyLevel1 == difficultyLevel) {
+                init();
+            } else {
+                dataRuinsofLight = new Object();
+                dataStructures = new Object();
+                dataTools = new Object();
+                if (difficultyLevel1 != "") {
+                    if (document.getElementById("config_" + difficultyLevel1) == null) {
+                        let cache = document.createElement("div");
+                        cache.id = "config_" + difficultyLevel1;
+                        document.getElementById("configStore").appendChild(cache);
+                    }
+                    document.getElementById("config_" + difficultyLevel1).innerHTML = document.getElementById("config").innerHTML;
+                }
+                document.getElementById("config").remove();
+                difficultyLevel1 = difficultyLevel;
+                let configDiv = document.createElement("script");
+                configDiv.id = "config";
+                configDiv.type = "text/javascript";
+                document.body.appendChild(configDiv);
+                if (document.getElementById("config_" + difficultyLevel) != null) {
+                    configDiv.text = document.getElementById("config_" + difficultyLevel).innerHTML;
+                    init();
+                } else {
+                    let url = difficultyLevel + ".js";
+                    let xhr = new XMLHttpRequest;
+                    xhr.open("GET", url);
+                    xhr.onload = function (e) {
+                        if (xhr.status == 200) {
+                            configDiv.text = xhr.responseText;
+                            init();
+                        } else {
+                            console.log(xhr.response);
+                        }
+                    }
+                    xhr.send(null);
+                }
+            }
+        }
+        function init() {
+            let loading = setInterval(() => {
+                select1 = document.getElementById("select1");
+                select2 = document.getElementById("select2");
+                if (select1 != null && select2 != null && Object.keys(dataRuinsofLight).length > 0) {
+                    clearInterval(loading);
+                    //console.log(dataRuinsofLight);
+                    Object.defineProperty(blockTree, 'getPath', {
+                        value: (c) => {
+                            function findPath(b, t) {
+                                let path = "";
+                                Object.keys(b).forEach(e => {
+                                    if (e == t) {
+                                        path = e;
+                                    } else {
+                                        if (Object.keys(b[e]).length > 0) {
+                                            let path1 = findPath(b[e], t);
+                                            if (path1 != "") path = e.concat("/").concat(path1);
+                                        }
+                                    }
+                                });
+                                return path;
+                            }
+                            return findPath(blockTree, c);
+                        },
+                        enumerable: false
+                    });
+                    Object.defineProperty(blockTree, 'add', {
+                        value: (parent, child) => {
+                            //if (parent in dataRuinsofLight) return;
+                            let childPath = blockTree.getPath(child);
+                            let parentPath = blockTree.getPath(parent);
+                            if (childPath != "" && childPath.indexOf("/") > 0) {
+                                return;
+                            }
+                            if (childPath == "") {
+                                blockTree[child] = new Object();
+                                childPath = child;
+                            }
+                            if (parentPath == "") {
+                                blockTree[parent] = new Object();
+                                parentPath = parent;
+                            }
+                            let parentPathArr = parentPath.split("/");
+                            let tmp = blockTree;
+                            for (let i = 0; i < parentPathArr.length; i++) {
+                                tmp = tmp[parentPathArr[i]];
+                            }
+                            tmp[child] = blockTree[child];
+                            delete blockTree[child];
+                        },
+                        enumerable: false
+                    });
+                    function sortObject(b) {
+                        let newArr = Object.keys(b).sort();
+                        let newO = new Object();
+                        for (let i = 0; i < newArr.length; i++) {
+                            newO[newArr[i]] = b[newArr[i]];
+                        }
+                        return newO;
+                    }
+                    lightLines[""] = 0;
+                    select2.innerHTML = "";
+                    Object.keys(dataRuinsofLight).forEach(e => {
+                        lightLines[e] = 0;
+                        let tmp = new RuinsofLight();
+                        tmp.name = e;
+                        tmp.Map = dataRuinsofLight[e].Map;
+                        tmp.Requires = dataRuinsofLight[e].Requires || [];
+                        tmp.Blueprint = dataRuinsofLight[e].Blueprint || [];
+                        tmp.Craft = dataRuinsofLight[e].Craft || [];
+                        blocks[e] = tmp;
+                        let tmp1 = document.createElement("option");
+                        tmp1.value = translate(e);
+                        tmp1.text = e;
+                        select2.appendChild(tmp1);
+                    });
+                    dataStructures = sortObject(dataStructures);
+                    Object.keys(dataStructures).forEach(e => {
+                        let tmp1 = document.createElement("option");
+                        tmp1.value = translate(e);
+                        tmp1.text = e;
+                        select2.appendChild(tmp1);
+                        let tmp = new Structures();
+                        tmp.name = e;
+                        if ("Map" in dataStructures[e]) tmp.Map = dataStructures[e].Map;
+                        tmp.Requires = dataStructures[e].Requires || [];
+                        tmp.Blueprint = dataStructures[e].Blueprint || [];
+                        tmp.Craft = dataStructures[e].Craft || [];
+                        blocks[e] = tmp;
+                    });
+                    dataTools = sortObject(dataTools);
+                    Object.keys(dataTools).forEach(e => {
+                        let tmp1 = document.createElement("option");
+                        tmp1.value = translate(e);
+                        tmp1.text = e;
+                        select2.appendChild(tmp1);
+                        let tmp = new Items();
+                        tmp.name = e;
+                        tmp.Requires = dataTools[e].Requires || [];
+                        tmp.Blueprint = dataTools[e].Blueprint || [];
+                        blocks[e] = tmp;
+                    });
+                    function addTree(e) {
+                        if ("Blueprint" in blocks[e]) blocks[e].Blueprint.forEach(s => {
+                            if (s in dataStructures) {
+                                if (s in blocks) {
+                                    blocks[s].Upgrade = e;
+                                    blocks[e].UpgradeFrom = s;
+                                    blockTree.add(s, e);
+                                    let base = "";
+                                    if (s in lightLines) {
+                                        base = s;
+                                    } else {
+                                        if (blocks[s].base != "") {
+                                            base = blocks[s].base;
+                                        } else {
+                                            base = addTree(s);
+                                        }
+                                    }
+                                    if (base != "" && Object.keys(lightLines).indexOf(blocks[e].base) < Object.keys(lightLines).indexOf(base)) blocks[e].base = base;
+                                }
+                            }
+                        });
+                        blocks[e].Requires.forEach(r => {
+                            if (r in blocks) {
+                                let base = "";
+                                if (r in lightLines) {
+                                    base = r;
+                                } else {
+                                    if (blocks[r].base != "") {
+                                        base = blocks[r].base;
+                                    } else {
+                                        base = addTree(r);
+                                    }
+                                }
+                                if (base != "" && Object.keys(lightLines).indexOf(blocks[e].base) < Object.keys(lightLines).indexOf(base)) blocks[e].base = base;
+
+                                if ("Unlock" in blocks[r]) if (blocks[r].Unlock.indexOf(e) < 0) {
+                                    blocks[r].Unlock.push(e);
+                                    if (r in dataStructures && e in dataStructures) blockTree.add(r, e);
+                                }
+                            }
+                        });
+                        if (e in dataStructures && blockTree.getPath(e) == "") {
+                            blockTree[e] = new Object();
+                        }
+                        return blocks[e].base;
+                    }
+                    Object.keys(blocks).forEach(e => {
+                        addTree(e);
+                    });
+                    Object.keys(blocks).forEach(e => {
+                        if ("Blueprint" in blocks[e]) blocks[e].Blueprint.forEach(s => {
+                            if (s.indexOf("*") > 0) {
+                                let s1 = s.substr(0, s.indexOf("*"));
+                                if ("UpgradeFrom" in blocks[e] && blocks[e].UpgradeFrom != "" && "Craft" in blocks[blocks[e].UpgradeFrom] && blocks[blocks[e].UpgradeFrom].Craft.indexOf(s1) > -1) {
+                                    s1 = "";
+                                } else {
+                                    let HiddenRequires_path = "";
+                                    blocks[e].Requires.forEach(s2 => {
+                                        if (s2 in blocks && "Craft" in blocks[s2] && blocks[s2].Craft.indexOf(s1) > -1) HiddenRequires_path = s2;
+                                    });
+                                    if (HiddenRequires_path == "") {
+                                        Object.keys(dataStructures).forEach(e1 => {
+                                            if (blocks[e1].Craft.indexOf(s1) > -1) {
+                                                if (HiddenRequires_path == "") HiddenRequires_path = blockTree.getPath(e1);
+                                                else if (blockTree.getPath(e1).split("/").length < HiddenRequires_path.split("/").length) HiddenRequires_path = e1;
+                                            }
+                                        });
+                                        if (HiddenRequires_path != "") {
+                                            let HiddenRequires_arr = HiddenRequires_path.split("/");
+                                            blocks[e].HiddenRequires.push(HiddenRequires_arr[HiddenRequires_arr.length - 1]);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    });
+                    Object.keys(blocks).forEach(e => {
+                        if ("Blueprint" in blocks[e]) {
+                            let tmp = new Object();
+                            //if (blocks[e].Blueprint.length < 1) console.log(e); 查哪个没写蓝图
+                            blocks[e].Blueprint.forEach(s => {
+                                if (s.indexOf("*") > 0) {
+                                    let s1 = s.substr(0, s.indexOf("*"));
+                                    blocks[e].HiddenRequires.forEach(s2 => {
+                                        if (s2 in blocks && "Craft" in blocks[s2] && blocks[s2].Craft.indexOf(s1) > -1) {
+                                            if (!(s2 in tmp)) tmp[s2] = new Array();
+                                            tmp[s2].push(s1);
+                                        }
+                                    });
+                                }
+                            });
+                            Object.keys(tmp).forEach(t => {
+                                if (tmp[t].length == 1) {
+                                    let inother = false;
+                                    Object.keys(tmp).forEach(t1 => {
+                                        if (t1 != t && tmp[t1].indexOf(tmp[t][0]) > -1) inother = true;
+                                    });
+                                    if (inother) blocks[e].HiddenRequires.splice(blocks[e].HiddenRequires.indexOf(t), 1);
+                                }
+                            });
+                        }
+                    });
+                    fixPosition();
+                    loadImages();
+                }
+            }, 100);
+        }
+        function fixPosition() {
+            loopTreeX("", blockTree, { x: 0, y: 0 });
+            while (loopTreeY() != JSON.stringify(blocks)) p = 0;
+            Object.keys(dataRuinsofLight).forEach(c => {
+                if (blocks[c].position.x >= rightSide_R) rightSide_R = blocks[c].position.x + 1;
+            });
+            Object.keys(dataStructures).forEach(c => {
+                if (blocks[c].position.x >= rightSide_S) rightSide_S = blocks[c].position.x + 1;
+            });
+            Object.keys(dataTools).forEach(c => {
+                if (blocks[c].position.x < rightSide_S) blocks[c].position.x = rightSide_S;
+            });
+            while (loopTools() != JSON.stringify(blocks)) p = 0;
+        }
+        function loopTreeX(n, b, a) {
+            // name, tree, area
+            let p = 0;
+            let ba = Object.keys(b).sort();
+            for (let i = 0; i < ba.length; i++) {
+                let e = ba[i];
+                if ("Upgrade" in blocks[e] && blocks[e]["Upgrade"] !== "") {
+                    p += loopTreeX(blocks[e]["Upgrade"], b[e][blocks[e]["Upgrade"]], { x: a.x + p, y: a.y + 1 });
+                }
+                if (n != "" && "Upgrade" in blocks[n] && e == blocks[n]["Upgrade"]) {
+                    blocks[e].position.x = a.x;
+                } else {
+                    if (blocks[e].position.x == 0) {
+                        p++;
+                        blocks[e].position.x = a.x + p;
+                    }
+                }
+                blocks[e].position.y = a.y + 1;
+                if (Object.keys(b[e]).length > 0) {
+                    p += loopTreeX(e, b[e], JSON.parse(JSON.stringify(blocks[e].position)));
+                }
+            }
+            //console.log(n, a, p);
+            return p;
+        }
+        function loopTreeY() {
+            let blocks1 = JSON.stringify(blocks);
+            Object.keys(blocks).forEach(e => {
+                if (blocks[e].base == "") {
+                    if (e in lightLines) {
+                        blocks[e].position.y = lightLines[e];
+                    }
+                } else {
+                    if (blocks[e].position.y <= lightLines[blocks[e].base]) {
+                        blocks[e].position.y = lightLines[blocks[e].base] + 1;
+                    }
+                }
+
+                if (!(e in lightLines)) {
+                    let nextbase = Object.keys(lightLines)[Object.keys(lightLines).indexOf(blocks[e].base) + 1];
+                    if (blocks[e].position.y >= lightLines[nextbase]) {
+                        lightLines[nextbase] = blocks[e].position.y + 1;
+                        blocks[nextbase].position.y = lightLines[nextbase];
+                    }
+                } else {
+                    let preLightLines = Object.keys(lightLines)[Object.keys(lightLines).indexOf(e) - 1];
+                    if (lightLines[e] <= lightLines[preLightLines]) {
+                        lightLines[e] = lightLines[preLightLines] + 1;
+                        blocks[e].position.y = lightLines[e];
+                    }
+                }
+
+                if ("UpgradeFrom" in blocks[e]) {
+                    let s = blocks[e].UpgradeFrom;
+                    if (s in dataStructures) {
+                        //if (blocks[s].position.x > 0) {
+                        //    blocks[e].position.x = blocks[s].position.x;
+                        if (blocks[e].position.y <= blocks[s].position.y) {
+                            blocks[e].position.y = blocks[s].position.y + 1;
+                        }
+                        //}
+                    }
+                }
+                if ("Requires" in blocks[e]) blocks[e].Requires.forEach(r => {
+                    //console.log(e,blocks[e],r,blocks[r]);
+                    if (r in blocks) if (blocks[e].position.y <= blocks[r].position.y) blocks[e].position.y = blocks[r].position.y + 1;
+                });
+                //if ("HiddenRequires" in blocks[e]) blocks[e].HiddenRequires.forEach(r => {
+                //console.log(e,blocks[e],r,blocks[r]);
+                //    if (r in blocks) if (blocks[e].pos.y < blocks[r].pos.y + blockHeight) blocks[e].pos.y = blocks[r].pos.y + blockHeight;
+                //});
+                //bugreport(e, blocks[e].pos.x, rightSide_S);
+
+            });
+            return blocks1;
+        }
+        function loopTools() {
+            let blocks1 = JSON.stringify(blocks);
+            Object.keys(dataTools).forEach(e => {
+                Object.keys(dataTools).forEach(c => {
+                    if (c != e) {
+                        if (blocks[e].position.x == blocks[c].position.x && blocks[e].position.y == blocks[c].position.y) blocks[c].position.x += 1;
+                    }
+                    if (blocks[c].position.x >= rightSide_I) rightSide_I = blocks[c].position.x + 1;
+                    //bugreport(blocks[c].pos.x + blocks[c].pos.w, rightSide_I)
+                });
+            });
+            return blocks1;
+        }
+        var debug = 5, debugTarget = "熔炉";
+        function bugreport(...e) {
+            if (debug > 0) console.log(...e);
+        }
+        var canvas = document.getElementById("main");
+        var ctx = canvas.getContext("2d");
+        var sideTop = 10, sideLeft = 10, sideBottom = 10, sideRight = 10, border = 3;
+        var needWidth = 1000, needHeight = 800;
+        var Hovering = "";
+        var X = 0, Y = 0;
+        var draged = { x: 0, y: 0 };
+        var fontSize = 12;
+        var blockWidth = 0, blockHeight = 0;
+        var bgcolor = "#fdfdfd";
+        //document.body.bgColor = bgcolor;
+
+        //for (let i = 0; i < 15; i++)
+        //    main();
+        requestAnimationFrame(mainloop);
+        function mainloop() { // 开始主循环
+            canvas.width = document.body.clientWidth;
+            canvas.height = document.documentElement.clientHeight;
+            try {
+                if (Object.keys(blocks).length > 0) {
+                    main();
+                } else {
+                    let str = "Loading...";
+                    let font1 = 50;
+                    ctx.font = "" + font1 + "px sans-serif";
+                    writeText(str, canvas.width / 2 - ctx.measureText(str).width / 2, canvas.height / 2 - font1 / 2, canvas.width, canvas.height);
+                }
+                requestAnimationFrame(mainloop);
+            } catch (e) {
+                //document.getElementById("err1").innerHTML = e.stack || e;
+                console.log(e.stack || e)
+            }
+        }
+        function main() {
+            let Hovering1 = "";
+            blockWidth = fontSize * 3 + border * 2;
+            blockHeight = blockWidth;
+            resetDrag();
+            if (Number.isNaN(fontSize) || Number.isNaN(blockWidth) || Number.isNaN(blockHeight)) throw "fontsize:" + fontSize + ", blockWidth:" + blockWidth + ", blockHeight:" + blockHeight;
+            let font = "" + fontSize + "px sans-serif";
+            let biggerFontSize = Math.floor(fontSize * 1.3);
+            if (biggerFontSize < fontSize + 1) biggerFontSize = fontSize + 1;
+            let biggerFont = "" + biggerFontSize + "px sans-serif";
+            sideBottom = biggerFontSize < 10 ? 10 : biggerFontSize;
+            sideLeft = sideBottom;
+            sideRight = sideBottom;
+            sideTop = sideBottom;
+            //canvas.width = document.body.clientWidth < needWidth ? document.body.clientWidth : needWidth;
+            //canvas.height = document.documentElement.clientHeight - head.offsetHeight < needHeight ? document.documentElement.clientHeight - head.offsetHeight : needHeight;
+            //canvas.setAttribute("loop", debug);
+            ctx.fillStyle = bgcolor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            //ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
+
+            let max = { x: 0, y: 0 };
+            Object.keys(blocks).forEach(e => {
+                if (blocks[e].position.x > max.x) max.x = blocks[e].position.x;
+                if (blocks[e].position.y > max.y) max.y = blocks[e].position.y;
+            });
+            needWidth = sideLeft + (max.x + 1) * blockWidth + sideRight;
+            needHeight = sideTop + (max.y + 1) * blockHeight + sideBottom;
+
+            Object.keys(lightLines).forEach(e => {
+                if (e in dataRuinsofLight) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, sideTop + blockHeight * lightLines[e] - draged.y);
+                    ctx.lineTo(canvas.width, sideTop + blockHeight * lightLines[e] - draged.y);
+                    //ctx.closePath();
+                    ctx.strokeStyle = "gray";
+                    ctx.stroke();
+                    ctx.fillStyle = "gray";
+                    let l = e.split(" ");
+                    writeText(l[l.length - 1], canvas.width - blockWidth, sideTop + blockHeight * lightLines[e] - draged.y + blockHeight / 2, blockWidth, blockHeight);
+                }
+            });
+            ctx.setLineDash([fontSize, fontSize / 2]); // 虚线
+            ctx.strokeStyle = "gray";
+            ctx.beginPath();
+            ctx.moveTo(sideLeft + rightSide_R * blockWidth - draged.x, -draged.y);
+            ctx.lineTo(sideLeft + rightSide_R * blockWidth - draged.x, needHeight);
+            //ctx.closePath();
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(sideLeft + rightSide_S * blockWidth - draged.x, -draged.y);
+            ctx.lineTo(sideLeft + rightSide_S * blockWidth - draged.x, needHeight);
+            //ctx.closePath();
+            ctx.stroke();
+            /*ctx.beginPath();
+            ctx.moveTo(sideLeft + rightSide_I * blockWidth - draged.x, 0);
+            ctx.lineTo(sideLeft + rightSide_I * blockWidth - draged.x, canvas.height);
+            //ctx.closePath();
+            ctx.stroke();*/
+            ctx.setLineDash([]); // 清除虚线
+
+            Object.keys(blocks).forEach(e => {
+                draw(e);
+            });
+
+            if (Hovering != "") {
+                ctx.font = biggerFont;
+                let tmpcolor = ctx.fillStyle;
+                ctx.fillStyle = bgcolor;
+                ctx.fillRect(blocks[Hovering].pos.x, blocks[Hovering].pos.y, blocks[Hovering].pos.w, blocks[Hovering].pos.h);
+                ctx.fillStyle = tmpcolor;
+
+                ctx.strokeStyle = "black";
+                //ctx.fillStyle = "black";
+                ctx.beginPath();
+                ctx.rect(blocks[Hovering].pos.x, blocks[Hovering].pos.y, blocks[Hovering].pos.w, blocks[Hovering].pos.h);
+                ctx.closePath();
+                if (ctx.isPointInPath(X, Y)) Hovering1 = Hovering;
+                ctx.stroke();
+
+                let text_h = biggerFontSize;
+                let tmpx = blocks[Hovering].pos.x;
+                if (document.body.scrollLeft > blocks[Hovering].pos.x) {
+                    ctx.fillStyle = ctx.strokeStyle;
+                    tmpx = document.body.scrollLeft;
+                }
+                if (blocks[Hovering].pos.x + blocks[Hovering].pos.w > document.body.clientWidth) {
+                    ctx.fillStyle = ctx.strokeStyle;
+                    tmpx = document.body.clientWidth - blocks[Hovering].pos.w;
+                }
+                let s = Hovering;
+                if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
+                    s = s.substr(0, s.lastIndexOf(" "));
+                }
+                if (showImage && tmpx == blocks[Hovering].pos.x) {
+                    if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx, blocks[Hovering].pos.y, blocks[Hovering].pos.w, blocks[Hovering].pos.h);
+                    writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y - border * 2, canvas.height, blocks[Hovering].pos.h);
+                } else {
+                    writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y + getFontHeight(), blocks[Hovering].pos.w, blocks[Hovering].pos.h);
+                }
+
+                ctx.fillStyle = "brown";
+                let blueprint1 = "";
+                blocks[Hovering].Blueprint.forEach(b => {
+                    if (b.indexOf("*") > 0) {
+                        blueprint1 += translate(b.substr(0, b.indexOf("*"))) + b.substr(b.indexOf("*")) + "\n";
+                    } else {
+                        blueprint1 += translate(b) + "\n";
+                    }
+                });
+                blueprint1 = blueprint1.substr(0, blueprint1.length - 1);
+                writeText(blueprint1, Hovering1 == "" ? blocks[Hovering].pos.x + text_h * 4 : X + blockWidth, (Hovering1 == "" ? blocks[Hovering].pos.y : Y) - text_h * blocks[Hovering].Blueprint.length, canvas.width, blockHeight * 2);
+
+                if ("Map" in blocks[Hovering]) {
+                    ctx.fillStyle = "black";
+                    let location = blocks[Hovering].Map;
+                    location = splitTranslateMap(location, "@");
+                    location = splitTranslateMap(location, "|");
+                    location = translate(location);
+                    let y1 = blocks[Hovering].pos.y - border * 2;
+                    if (showImage) y1 = y1 - text_h;
+                    writeText(translate("Location") + ": " + location, blocks[Hovering].pos.x, y1, canvas.width, blocks[Hovering].pos.h);
+                }
+            }
+            if (Hovering1 != "") {
+                Hovering = Hovering1;
+            } else {
+                Hovering = existInput();
+            }
+
+            debug--;
+            /*if (JSON.stringify(blocks) != blocks1) {
+                let img = document.createElement("img");
+                img.src = canvas.toDataURL();
+                img.width = 100;
+                img.title = debug;
+                img.style.margin = "2px";
+                document.getElementById("err1").appendChild(img);
+                //console.log(debug, blocks, blocks1);
+                blocks1 = JSON.stringify(blocks);
+            }
+            if (lightLines["光明遗迹 VI"] > 100) throw "向下掉";
+            if (rightSide_I > 100) throw "向右扩";*/
+
+            function draw(e) {
+                ctx.strokeStyle = "black";
+                ctx.fillStyle = "black";
+                ctx.font = font;
+                if (blocks[e].pos.w == 0) blocks[e].pos.w = blockWidth - border * 2;
+                if (blocks[e].pos.h == 0) blocks[e].pos.h = blockHeight - border * 2;
+
+                let stroked = false;
+                if (Hovering == e) {
+                    ctx.font = biggerFont;
+                    let text_h = biggerFontSize;
+                    blocks[e].pos.x = sideLeft + blocks[e].position.x * blockWidth + blockWidth / 2 - text_h * 2 - draged.x;
+                    blocks[e].pos.y = sideTop + blocks[e].position.y * blockHeight + blockHeight / 2 - text_h * 2 - draged.y;
+                    blocks[e].pos.w = text_h * 4 + 1;
+                    blocks[e].pos.h = text_h * 4 + 1;
+                    ctx.beginPath();
+                    ctx.rect(blocks[e].pos.x, blocks[e].pos.y, blocks[e].pos.w, blocks[e].pos.h);
+                    ctx.closePath();
+                    //ctx.stroke();
+                    stroked = true;
+                } else {
+                    blocks[e].pos.x = sideLeft + blocks[e].position.x * blockWidth + border - draged.x;
+                    blocks[e].pos.y = sideTop + blocks[e].position.y * blockHeight + border - draged.y;
+                    blocks[e].pos.w = blockWidth - border * 2 + 1;
+                    blocks[e].pos.h = blockHeight - border * 2 + 1;
+                    ctx.beginPath();
+                    ctx.rect(blocks[e].pos.x, blocks[e].pos.y, blocks[e].pos.w, blocks[e].pos.h);
+                    ctx.closePath();
+                }
+                if (ctx.isPointInPath(X, Y)) {
+                    Hovering1 = e;
+                }
+                if (Hovering != "") {
+                    if ("Requires" in blocks[Hovering] && blocks[Hovering].Requires.indexOf(e) > -1) {
+                        ctx.strokeStyle = "red";
+                        //ctx.fillStyle = "red";
+                        //ctx.stroke();
+                        //ctx.fill();
+                        stroked = true;
+                    }
+                    if ("Blueprint" in blocks[Hovering]) {
+                        blocks[Hovering].Blueprint.forEach(b => {
+                            if (b.indexOf("*") > 0) {
+                                b = b.substr(0, b.indexOf("*"));
+                                if (b == e) {
+                                    ctx.strokeStyle = "red";
+                                    ctx.setLineDash([fontSize / 3, fontSize / 5]); // 虚线
+                                    //ctx.fillStyle = "red";
+                                    //ctx.stroke();
+                                    //ctx.fill();
+                                    stroked = true;
+                                }
+                            }
+                        });
+                    }
+                    if ("HiddenRequires" in blocks[Hovering] && blocks[Hovering].HiddenRequires.indexOf(e) > -1) {
+                        ctx.strokeStyle = "red";
+                        ctx.setLineDash([fontSize / 4, fontSize / 3]); // 虚线
+                        //ctx.fillStyle = "red";
+                        //ctx.stroke();
+                        //ctx.fill();
+                        stroked = true;
+                    }
+                    if ("Unlock" in blocks[Hovering] && blocks[Hovering].Unlock.indexOf(e) > -1) {
+                        ctx.strokeStyle = "green";
+                        //ctx.fillStyle = "green";
+                        //ctx.stroke();
+                        stroked = true;
+                    }
+                    if ("Upgrade" in blocks[Hovering] && blocks[Hovering].Upgrade == e) {
+                        ctx.strokeStyle = "blue";
+                        //ctx.fillStyle = "blue";
+                        //ctx.stroke();
+                        stroked = true;
+                    }
+                    if ("UpgradeFrom" in blocks[Hovering] && blocks[Hovering].UpgradeFrom == e) {
+                        ctx.strokeStyle = "cyan";
+                        //ctx.fillStyle = "cyan";
+                        stroked = true;
+                    }
+                    if (stroked && Hovering != e) {
+                        ctx.stroke();
+                        let start = "", end = "";
+                        if (blocks[Hovering].position.y > blocks[e].position.y) {
+                            start = Hovering;
+                            end = e;
+                        } else {
+                            start = e;
+                            end = Hovering;
+                        }
+                        ctx.beginPath();
+                        ctx.moveTo(blocks[start].pos.x + blocks[start].pos.w / 2, blocks[start].pos.y + blocks[start].pos.h / 2);
+                        ctx.lineTo(blocks[start].pos.x + blocks[start].pos.w / 2, blocks[end].pos.y + blocks[end].pos.h / 2);
+                        ctx.lineTo(blocks[end].pos.x + blocks[end].pos.w / 2, blocks[end].pos.y + blocks[end].pos.h / 2);
+                        ctx.stroke();
+                    }
+                }
+                if (!stroked) {
+                    ctx.strokeStyle = "gray";
+                    ctx.fillStyle = "gray";
+                    ctx.stroke();
+                }
+                if (e != Hovering) {
+                    let tmpx = blocks[e].pos.x;
+                    if (stroked && document.body.scrollLeft > blocks[e].pos.x) {
+                        ctx.fillStyle = ctx.strokeStyle;
+                        tmpx = document.body.scrollLeft;
+                    }
+                    if (stroked && blocks[e].pos.x + blocks[e].pos.w > document.body.clientWidth) {
+                        ctx.fillStyle = ctx.strokeStyle;
+                        tmpx = document.body.clientWidth - blocks[e].pos.w;
+                    }
+                    //let name = e + "\n" + blocks[e].position.x + "," + blocks[e].position.y;
+                    let s = e;
+                    if (e in dataRuinsofLight || e.substr(e.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
+                        s = e.substr(0, e.lastIndexOf(" "));
+                    }
+                    if (showImage && tmpx == blocks[e].pos.x) {
+                        if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx, blocks[e].pos.y, blocks[e].pos.w, blocks[e].pos.h);
+                        if (stroked) writeText(translate(e), tmpx, blocks[e].pos.y - border * 2, canvas.height, blocks[e].pos.h);
+                    } else {
+                        writeText(translate(e), tmpx, blocks[e].pos.y + getFontHeight(), blocks[e].pos.w, blocks[e].pos.h);
+                    }
+                }
+
+                //if (e == debugTarget) bugreport("7", blocks[e].position);
+                ctx.font = font;
+                ctx.strokeStyle = "black";
+                ctx.fillStyle = "black";
+                ctx.setLineDash([]); // 重置虚线
+                return { x: blocks[e].position.x, y: blocks[e].position.y, r: blocks[e].position.x };
+            }
+        } // main end
+
+        function getFontHeight(f) {
+            let text_h = f == null ? ctx.font : f;
+            text_h = text_h.substr(0, text_h.indexOf('px'));
+            if (text_h.lastIndexOf(' ') > 0) text_h = text_h.substr(text_h.lastIndexOf(' ') + 1);
+            return Number(text_h);
+        }
+        function translate(key) {
+            if (language != Object.keys(languages)[0]) {
+                if (Object.keys(dataTranslation).length > 0) {
+                    let lv = "";
+                    if (key.substr(key.lastIndexOf(" ") + 1).substr(0, 2) == "LV" || key in dataRuinsofLight) {
+                        lv = key.substr(key.lastIndexOf(" ") + 1);
+                        key = key.substr(0, key.lastIndexOf(" "));
+                    }
+                    if (key in dataTranslation) {
+                        let result = dataTranslation[key];
+                        if (lv != "") result += " ".concat(lv);
+                        return result;
+                    } else {
+                        if (lv != "") key += " ".concat(lv);
+                    }
+                }
+            }
+            return key;
+        }
+        function splitTranslateMap(m, s) {
+            let m1 = m;
+            if (m.indexOf(s) > -1) {
+                let s1 = m.substr(0, m.indexOf(s) - 1);
+                let s2 = m.substr(m.indexOf(s) + 2);
+                m1 = translate(s1).concat(" " + s + " ").concat(translate(s2));
+            }
+            return m1;
+        }
+        function writeText(text, x, y, w, h) {
+            let text_h = getFontHeight();
+            if (y + draged.y < text_h) y = text_h;
+            let strarr = [], str = "", w1 = 0;
+            let textArr = text.split("\n");
+            for (let j = 0; j < textArr.length; j++) {
+                let text1 = textArr[j];
+                for (let i = 0; i < text1.length; i++) {
+                    let tmp = str + text1[i];
+                    if (ctx.measureText(tmp).width > w) {
+                        if (w1 < ctx.measureText(str).width) w1 = ctx.measureText(str).width;
+                        strarr.push(str);
+                        str = "";
+                        i--;
+                    } else {
+                        str = tmp;
+                    }
+                }
+                if (w1 < ctx.measureText(str).width) w1 = ctx.measureText(str).width;
+                strarr.push(str);
+                str = "";
+            }
+            //if (x + w1 > canvas.width) x = canvas.width - w1;
+            if (x + w1 + draged.x > needWidth) x = canvas.width - w1;
+            //if ((strarr.length - 1) * text_h + y > canvas.height) y = canvas.height - (strarr.length - 1) * text_h;
+            if (y + (strarr.length - 1) * text_h + draged.y > needHeight) y = canvas.height - (strarr.length - 1) * text_h;
+            //整体垫底 ctx.fillRect(x + 1, y - text_h + 1, w1 - 2, (strarr.length) * text_h - 2);
+
+            for (let i = 0; i < strarr.length; i++) {
+                // 做个垫底
+                ctx.globalAlpha = 0.5; // 全局半透明
+                let tmpcolor = ctx.fillStyle;
+                ctx.fillStyle = bgcolor;
+                ctx.fillRect(x + 1, y + 1, ctx.measureText(strarr[i]).width - 2, 2 - text_h);
+                ctx.fillStyle = tmpcolor;
+                ctx.globalAlpha = 1; // 全局不透明
+
+                ctx.fillText(strarr[i], x, y);
+                y += text_h;
+            }
+        }
+        function showDiscription() {
+            let d = document.getElementById('settingAndDiscriptionTD');
+            d.style.display = d.style.display == 'none' ? '' : 'none';
+            let h = document.getElementById('head');
+            h.style.width = h.style.width == '' ? '100%' : '';
+            h.style.minHeight = h.style.minHeight == '100vh' ? '' : '100vh';
+            h.style.background = h.style.backgroundColor == '' ? 'rgba(200,200,200,0.85)' : '';
+        }
+        function existInput() {
+            let s = "";
+            if (select1.value != "") {
+                Object.keys(blocks).forEach(e => {
+                    if (e == select1.value) s = e;
+                    if (translate(e) == select1.value) s = e;
+                });
+            }
+            return s;
+        }
+        function scrollCenter() {
+            let s = existInput();
+            if (s != "") {
+                draged.x += blocks[s].pos.x - window.innerWidth / 2;
+                draged.y += blocks[s].pos.y - window.innerHeight / 2;
+            }
+        }
+        function mouseMovePos(e) {
+            //console.log(e);
+            let e1;
+            if ("touches" in e) {
+                e1 = e.touches[0];
+            } else {
+                e1 = e;
+            }
+            X = e1.clientX + document.body.scrollLeft - canvas.offsetLeft;
+            Y = e1.clientY + document.body.scrollTop - canvas.offsetTop;
+        }
+        function mouseDrag(e, beforDrag) {
+            mouseMovePos(e);
+            let endDrag = { x: X, y: Y };
+            draged.x = beforDrag.x0 + (beforDrag.x - endDrag.x) * (Math.abs(beforDrag.x - endDrag.x) > 10 ? Math.log10(Math.abs(beforDrag.x - endDrag.x)) : 1);
+            draged.y = beforDrag.y0 + (beforDrag.y - endDrag.y) * (Math.abs(beforDrag.y - endDrag.y) > 10 ? Math.log10(Math.abs(beforDrag.y - endDrag.y)) : 1);
+        }
+        function resetDrag() {
+            let thin = canvas.width < canvas.height ? canvas.width : canvas.height;
+            if (blockWidth * 5 > thin) {
+                fontSize = Math.floor((thin / 5 - border * 2) / 3);
+                blockWidth = fontSize * 3 + border * 2;
+                blockHeight = blockWidth;
+            }
+            if (draged.x + document.body.clientWidth > needWidth) draged.x = needWidth - document.body.clientWidth;
+            if (draged.x < 0) draged.x = 0;
+            if (draged.y + document.documentElement.clientHeight > needHeight) draged.y = needHeight - document.documentElement.clientHeight;
+            if (draged.y < 0) draged.y = 0;
+        }
+        canvas.onmousemove = e => mouseMovePos(e);
+        canvas.onmousedown = e => {
+            //e.preventDefault();
+            //if (e.button == 0) {
+            mouseMovePos(e);
+            if (Hovering) console.log(translate(Hovering), blocks[Hovering]);
+            let beforDrag = { x: X, y: Y, x0: draged.x, y0: draged.y };
+            canvas.onmousemove = e => mouseDrag(e, beforDrag);
+            canvas.onmouseup = e => {
+                canvas.onmousemove = e => mouseMovePos(e);
+            }
+            //}
+            //if (e.button == 2) {
+            //    console.log("a");
+            //}
+        };
+        canvas.onwheel = e => {
+            fontSize -= Math.abs(e.wheelDelta) / e.wheelDelta;
+            if (fontSize < 2) fontSize = 2;
+        };
+        canvas.ontouchmove = e => mouseMovePos(e);
+        canvas.ontouchstart = e => {
+            e.preventDefault();
+            if (e.touches.length == 1) {
+                mouseMovePos(e);
+                let beforDrag = { x: X, y: Y, x0: draged.x, y0: draged.y };
+                //console.log(Hovering, blocks[Hovering]);
+                canvas.ontouchmove = e => mouseDrag(e, beforDrag);
+            } else {
+                let beforDrag = { s: fontSize, d: Math.sqrt((e.touches[0].clientX - e.touches[1].clientX) * (e.touches[0].clientX - e.touches[1].clientX) + (e.touches[0].clientY - e.touches[1].clientY) * (e.touches[0].clientY - e.touches[1].clientY)) };
+                canvas.ontouchmove = e => {
+                    let endDrag = Math.sqrt((e.touches[0].clientX - e.touches[1].clientX) * (e.touches[0].clientX - e.touches[1].clientX) + (e.touches[0].clientY - e.touches[1].clientY) * (e.touches[0].clientY - e.touches[1].clientY));
+                    fontSize = Math.floor((endDrag / beforDrag.d) * beforDrag.s);
+                    if (fontSize < 2) fontSize = 2;
+                };
+            }
+            canvas.ontouchend = e => {
+                canvas.ontouchmove = e => mouseMovePos(e);
+            }
+        };
+    </script>
+</body>
+
+</html>
