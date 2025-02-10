@@ -101,7 +101,7 @@
         }
 
         var select1, select2;
-        var dataRuinsofLight, dataStructures, dataTools;
+        var dataRuinsofLight, dataStructures, dataCrafts, dataTools;
         var blocks = new Object(), blocks1, blockTree, lightLines;
         var showImage = false;
         var difficultyLevels = ["standard", "difficult"];
@@ -320,6 +320,7 @@
             } else {
                 dataRuinsofLight = new Object();
                 dataStructures = new Object();
+                dataCrafts = new Object();
                 dataTools = new Object();
                 if (difficultyLevel1 != "") {
                     if (document.getElementById("config_" + difficultyLevel1) == null) {
@@ -445,6 +446,18 @@
                         tmp.Craft = dataStructures[e].Craft || [];
                         blocks[e] = tmp;
                     });
+                    dataCrafts = sortObject(dataCrafts);
+                    Object.keys(dataCrafts).forEach(e => {
+                        let tmp1 = document.createElement("option");
+                        tmp1.value = translate(e);
+                        tmp1.text = e;
+                        select2.appendChild(tmp1);
+                        let tmp = new Items();
+                        tmp.name = e;
+                        tmp.Requires = dataCrafts[e].Requires || [];
+                        tmp.Blueprint = dataCrafts[e].Blueprint || [];
+                        blocks[e] = tmp;
+                    });
                     dataTools = sortObject(dataTools);
                     Object.keys(dataTools).forEach(e => {
                         let tmp1 = document.createElement("option");
@@ -510,23 +523,26 @@
                         if ("Blueprint" in blocks[e]) blocks[e].Blueprint.forEach(s => {
                             if (s.indexOf("*") > 0) {
                                 let s1 = s.substr(0, s.indexOf("*"));
-                                if ("UpgradeFrom" in blocks[e] && blocks[e].UpgradeFrom != "" && "Craft" in blocks[blocks[e].UpgradeFrom] && blocks[blocks[e].UpgradeFrom].Craft.indexOf(s1) > -1) {
-                                    s1 = "";
-                                } else {
-                                    let HiddenRequires_path = "";
-                                    blocks[e].Requires.forEach(s2 => {
-                                        if (s2 in blocks && "Craft" in blocks[s2] && blocks[s2].Craft.indexOf(s1) > -1) HiddenRequires_path = s2;
-                                    });
-                                    if (HiddenRequires_path == "") {
-                                        Object.keys(dataStructures).forEach(e1 => {
-                                            if (blocks[e1].Craft.indexOf(s1) > -1) {
-                                                if (HiddenRequires_path == "") HiddenRequires_path = blockTree.getPath(e1);
-                                                else if (blockTree.getPath(e1).split("/").length < HiddenRequires_path.split("/").length) HiddenRequires_path = e1;
-                                            }
+                                if (!(s1 in blocks)) {
+                                    // 不在显示方块里才连接，不然连到Item那边去
+                                    if ("UpgradeFrom" in blocks[e] && blocks[e].UpgradeFrom != "" && "Craft" in blocks[blocks[e].UpgradeFrom] && blocks[blocks[e].UpgradeFrom].Craft.indexOf(s1) > -1) {
+                                        s1 = "";
+                                    } else {
+                                        let HiddenRequires_path = "";
+                                        blocks[e].Requires.forEach(s2 => {
+                                            if (s2 in blocks && "Craft" in blocks[s2] && blocks[s2].Craft.indexOf(s1) > -1) HiddenRequires_path = s2;
                                         });
-                                        if (HiddenRequires_path != "") {
-                                            let HiddenRequires_arr = HiddenRequires_path.split("/");
-                                            blocks[e].HiddenRequires.push(HiddenRequires_arr[HiddenRequires_arr.length - 1]);
+                                        if (HiddenRequires_path == "") {
+                                            Object.keys(dataStructures).forEach(e1 => {
+                                                if (blocks[e1].Craft.indexOf(s1) > -1) {
+                                                    if (HiddenRequires_path == "") HiddenRequires_path = blockTree.getPath(e1);
+                                                    else if (blockTree.getPath(e1).split("/").length < HiddenRequires_path.split("/").length) HiddenRequires_path = e1;
+                                                }
+                                            });
+                                            if (HiddenRequires_path != "") {
+                                                let HiddenRequires_arr = HiddenRequires_path.split("/");
+                                                blocks[e].HiddenRequires.push(HiddenRequires_arr[HiddenRequires_arr.length - 1]);
+                                            }
                                         }
                                     }
                                 }
@@ -566,17 +582,24 @@
         }
         function fixPosition() {
             loopTreeX("", blockTree, { x: 0, y: 0 });
-            while (loopTreeY() != JSON.stringify(blocks)) p = 0;
+            let p = 0;
+            while (loopTreeY() != JSON.stringify(blocks) && p < Object.keys(blocks).length * 5) p++;
             Object.keys(dataRuinsofLight).forEach(c => {
                 if (blocks[c].position.x >= rightSide_R) rightSide_R = blocks[c].position.x + 1;
             });
             Object.keys(dataStructures).forEach(c => {
                 if (blocks[c].position.x >= rightSide_S) rightSide_S = blocks[c].position.x + 1;
             });
-            Object.keys(dataTools).forEach(c => {
+            Object.keys(dataCrafts).forEach(c => {
                 if (blocks[c].position.x < rightSide_S) blocks[c].position.x = rightSide_S;
             });
-            while (loopTools() != JSON.stringify(blocks)) p = 0;
+            p = 0;
+            while (loopCrafts() != JSON.stringify(blocks) && p < Object.keys(blocks).length * 5) p++;
+            Object.keys(dataTools).forEach(c => {
+                if (blocks[c].position.x < rightSide_I) blocks[c].position.x = rightSide_I;
+            });
+            p = 0;
+            while (loopTools() != JSON.stringify(blocks) && p < Object.keys(blocks).length * 5) p++;
         }
         function loopTreeX(n, b, a) {
             // name, tree, area
@@ -654,6 +677,19 @@
             });
             return blocks1;
         }
+        function loopCrafts() {
+            let blocks1 = JSON.stringify(blocks);
+            Object.keys(dataCrafts).forEach(e => {
+                Object.keys(dataCrafts).forEach(c => {
+                    if (c != e) {
+                        if (blocks[e].position.x == blocks[c].position.x && blocks[e].position.y == blocks[c].position.y) blocks[c].position.x += 1;
+                    }
+                    if (blocks[c].position.x >= rightSide_I) rightSide_I = blocks[c].position.x + 1;
+                    //bugreport(blocks[c].pos.x + blocks[c].pos.w, rightSide_I)
+                });
+            });
+            return blocks1;
+        }
         function loopTools() {
             let blocks1 = JSON.stringify(blocks);
             Object.keys(dataTools).forEach(e => {
@@ -661,7 +697,7 @@
                     if (c != e) {
                         if (blocks[e].position.x == blocks[c].position.x && blocks[e].position.y == blocks[c].position.y) blocks[c].position.x += 1;
                     }
-                    if (blocks[c].position.x >= rightSide_I) rightSide_I = blocks[c].position.x + 1;
+                    //if (blocks[c].position.x >= rightSide_I) rightSide_I = blocks[c].position.x + 1;
                     //bugreport(blocks[c].pos.x + blocks[c].pos.w, rightSide_I)
                 });
             });
@@ -730,39 +766,39 @@
                 if (blocks[e].position.x > max.x) max.x = blocks[e].position.x;
                 if (blocks[e].position.y > max.y) max.y = blocks[e].position.y;
             });
-            needWidth = sideLeft + (max.x + 1) * blockWidth + sideRight;
-            needHeight = sideTop + (max.y + 1) * blockHeight + sideBottom;
+            needWidth = sideLeft + (max.x + 1) * (blockWidth + 1) + sideRight;
+            needHeight = sideTop + (max.y + 1) * (blockHeight + 1) + sideBottom;
 
             Object.keys(lightLines).forEach(e => {
                 if (e in dataRuinsofLight) {
                     ctx.beginPath();
-                    ctx.moveTo(0, sideTop + blockHeight * lightLines[e] - draged.y);
-                    ctx.lineTo(canvas.width, sideTop + blockHeight * lightLines[e] - draged.y);
+                    ctx.moveTo(0, sideTop + (blockHeight + 1) * lightLines[e] - draged.y);
+                    ctx.lineTo(canvas.width, sideTop + (blockHeight + 1) * lightLines[e] - draged.y);
                     //ctx.closePath();
                     ctx.strokeStyle = "gray";
                     ctx.stroke();
                     ctx.fillStyle = "gray";
                     let l = e.split(" ");
-                    writeText(l[l.length - 1], canvas.width - blockWidth, sideTop + blockHeight * lightLines[e] - draged.y + blockHeight / 2, blockWidth, blockHeight);
+                    writeText(l[l.length - 1], canvas.width - blockWidth, sideTop + (blockHeight + 1) * lightLines[e] - draged.y + blockHeight / 2, blockWidth, blockHeight);
                 }
             });
             ctx.setLineDash([fontSize, fontSize / 2]); // 虚线
             ctx.strokeStyle = "gray";
             ctx.beginPath();
-            ctx.moveTo(sideLeft + rightSide_R * blockWidth - draged.x, -draged.y);
-            ctx.lineTo(sideLeft + rightSide_R * blockWidth - draged.x, needHeight);
+            ctx.moveTo(sideLeft + rightSide_R * (blockWidth + 1) - draged.x, -draged.y);
+            ctx.lineTo(sideLeft + rightSide_R * (blockWidth + 1) - draged.x, needHeight);
             //ctx.closePath();
             ctx.stroke();
             ctx.beginPath();
-            ctx.moveTo(sideLeft + rightSide_S * blockWidth - draged.x, -draged.y);
-            ctx.lineTo(sideLeft + rightSide_S * blockWidth - draged.x, needHeight);
+            ctx.moveTo(sideLeft + rightSide_S * (blockWidth + 1) - draged.x, -draged.y);
+            ctx.lineTo(sideLeft + rightSide_S * (blockWidth + 1) - draged.x, needHeight);
             //ctx.closePath();
             ctx.stroke();
-            /*ctx.beginPath();
-            ctx.moveTo(sideLeft + rightSide_I * blockWidth - draged.x, 0);
-            ctx.lineTo(sideLeft + rightSide_I * blockWidth - draged.x, canvas.height);
+            ctx.beginPath();
+            ctx.moveTo(sideLeft + rightSide_I * (blockWidth + 1) - draged.x, -draged.y);
+            ctx.lineTo(sideLeft + rightSide_I * (blockWidth + 1) - draged.x, needHeight);
             //ctx.closePath();
-            ctx.stroke();*/
+            ctx.stroke();
             ctx.setLineDash([]); // 清除虚线
 
             Object.keys(blocks).forEach(e => {
@@ -770,19 +806,13 @@
             });
 
             if (Hovering != "") {
+                ctx.strokeStyle = "black";
+                ctx.fillStyle = "black";
                 ctx.font = biggerFont;
                 let tmpcolor = ctx.fillStyle;
                 ctx.fillStyle = bgcolor;
                 ctx.fillRect(blocks[Hovering].pos.x, blocks[Hovering].pos.y, blocks[Hovering].pos.w, blocks[Hovering].pos.h);
                 ctx.fillStyle = tmpcolor;
-
-                ctx.strokeStyle = "black";
-                //ctx.fillStyle = "black";
-                ctx.beginPath();
-                ctx.rect(blocks[Hovering].pos.x, blocks[Hovering].pos.y, blocks[Hovering].pos.w, blocks[Hovering].pos.h);
-                ctx.closePath();
-                if (ctx.isPointInPath(X, Y)) Hovering1 = Hovering;
-                ctx.stroke();
 
                 let text_h = biggerFontSize;
                 let tmpx = blocks[Hovering].pos.x;
@@ -799,11 +829,18 @@
                     s = s.substr(0, s.lastIndexOf(" "));
                 }
                 if (showImage && tmpx == blocks[Hovering].pos.x) {
-                    if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx, blocks[Hovering].pos.y, blocks[Hovering].pos.w, blocks[Hovering].pos.h);
+                    if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx + 1, blocks[Hovering].pos.y + 1, blocks[Hovering].pos.w - 2, blocks[Hovering].pos.h - 2);
                     writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y - border * 2, canvas.height, blocks[Hovering].pos.h);
                 } else {
                     writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y + getFontHeight(), blocks[Hovering].pos.w, blocks[Hovering].pos.h);
                 }
+
+                ctx.beginPath();
+                ctx.rect(blocks[Hovering].pos.x, blocks[Hovering].pos.y, blocks[Hovering].pos.w, blocks[Hovering].pos.h);
+                ctx.closePath();
+                if (ctx.isPointInPath(X, Y)) Hovering1 = Hovering;
+                ctx.stroke();
+
 
                 ctx.fillStyle = "brown";
                 let blueprint1 = "";
@@ -859,8 +896,8 @@
                 if (Hovering == e) {
                     ctx.font = biggerFont;
                     let text_h = biggerFontSize;
-                    blocks[e].pos.x = sideLeft + blocks[e].position.x * blockWidth + blockWidth / 2 - text_h * 2 - draged.x;
-                    blocks[e].pos.y = sideTop + blocks[e].position.y * blockHeight + blockHeight / 2 - text_h * 2 - draged.y;
+                    blocks[e].pos.x = sideLeft + blocks[e].position.x * (blockWidth + 1) + blockWidth / 2 - text_h * 2 - draged.x;
+                    blocks[e].pos.y = sideTop + blocks[e].position.y * (blockHeight + 1) + blockHeight / 2 - text_h * 2 - draged.y;
                     blocks[e].pos.w = text_h * 4 + 1;
                     blocks[e].pos.h = text_h * 4 + 1;
                     ctx.beginPath();
@@ -869,8 +906,8 @@
                     //ctx.stroke();
                     stroked = true;
                 } else {
-                    blocks[e].pos.x = sideLeft + blocks[e].position.x * blockWidth + border - draged.x;
-                    blocks[e].pos.y = sideTop + blocks[e].position.y * blockHeight + border - draged.y;
+                    blocks[e].pos.x = sideLeft + blocks[e].position.x * (blockWidth + 1) + border - draged.x;
+                    blocks[e].pos.y = sideTop + blocks[e].position.y * (blockHeight + 1) + border - draged.y;
                     blocks[e].pos.w = blockWidth - border * 2 + 1;
                     blocks[e].pos.h = blockHeight - border * 2 + 1;
                     ctx.beginPath();
@@ -942,15 +979,14 @@
                         ctx.moveTo(blocks[start].pos.x + blocks[start].pos.w / 2, blocks[start].pos.y + blocks[start].pos.h / 2);
                         ctx.lineTo(blocks[start].pos.x + blocks[start].pos.w / 2, blocks[end].pos.y + blocks[end].pos.h / 2);
                         ctx.lineTo(blocks[end].pos.x + blocks[end].pos.w / 2, blocks[end].pos.y + blocks[end].pos.h / 2);
-                        ctx.stroke();
+                        //ctx.stroke();
                     }
                 }
-                if (!stroked) {
-                    ctx.strokeStyle = "gray";
-                    ctx.fillStyle = "gray";
-                    ctx.stroke();
-                }
                 if (e != Hovering) {
+                    if (!stroked) {
+                        ctx.strokeStyle = "gray";
+                        ctx.fillStyle = "gray";
+                    }
                     let tmpx = blocks[e].pos.x;
                     if (stroked && document.body.scrollLeft > blocks[e].pos.x) {
                         ctx.fillStyle = ctx.strokeStyle;
@@ -966,11 +1002,12 @@
                         s = e.substr(0, e.lastIndexOf(" "));
                     }
                     if (showImage && tmpx == blocks[e].pos.x) {
-                        if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx, blocks[e].pos.y, blocks[e].pos.w, blocks[e].pos.h);
+                        if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx + 1, blocks[e].pos.y + 1, blocks[e].pos.w - 2, blocks[e].pos.h - 2);
                         if (stroked) writeText(translate(e), tmpx, blocks[e].pos.y - border * 2, canvas.height, blocks[e].pos.h);
                     } else {
                         writeText(translate(e), tmpx, blocks[e].pos.y + getFontHeight(), blocks[e].pos.w, blocks[e].pos.h);
                     }
+                    ctx.stroke();
                 }
 
                 //if (e == debugTarget) bugreport("7", blocks[e].position);
@@ -1046,7 +1083,7 @@
 
             for (let i = 0; i < strarr.length; i++) {
                 // 做个垫底
-                ctx.globalAlpha = 0.5; // 全局半透明
+                ctx.globalAlpha = 0.6; // 全局半透明
                 let tmpcolor = ctx.fillStyle;
                 ctx.fillStyle = bgcolor;
                 ctx.fillRect(x + 1, y + 1, ctx.measureText(strarr[i]).width - 2, 2 - text_h);
