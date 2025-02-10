@@ -108,6 +108,7 @@ dataTranslation = {
     "Spacetime Rift": "時空裂痕",
     "Strange Magical Symbol": "奇怪的魔法圖案",
     "Ancient Mythril Forge": "古代秘銀鐵匠鋪",
+    "Egg Incubator": "蛋孵化器",
 
     "Light Tablet": "光明碑牌",
     "Dimensional Tablet": "次元碑牌",
@@ -134,6 +135,7 @@ dataTranslation = {
     "Apple Branch": "蘋果樹枝",
     "Oak Branch": "橡樹枝",
     "Old Branch": "古木樹枝",
+    "Spider Cocoon": "蜘蛛繭",
     "Beehive": "蜂窩",
     "Icecap": "冰松",
 
@@ -164,6 +166,12 @@ dataTranslation = {
     "Earth Element": "土地元素",
     "Mana Mote": "法力浮塵",
     "Mana Crystal": "法力結晶",
+    "Steel Ore": "鐵礦石",
+    "Silver Ore": "銀礦石",
+    "Gold Ore": "金礦石",
+    "Platinum Ore": "白金礦石",
+    "Mythril Ore": "秘銀礦石",
+    "Mercury Ore": "水銀礦石",
     "Iron Bar": "鐵鑄錠",
     "Steel Bar": "鋼鐵鑄錠",
     "Silver Bar": "銀鑄錠",
@@ -172,7 +180,7 @@ dataTranslation = {
     "Mythril Bar": "秘銀鑄錠",
     "Earth Steel Bar": "大地鋼鐵鑄錠",
     "Black Cast Iron Bar": "黑色生鐵鑄錠",
-    "Mercury": "水银",
+    "Mercury": "水銀",
 
     "Torch": "火炬",
     "Straw Sleeping Bag": "草屑睡袋",
