@@ -42,7 +42,7 @@ dataRuinsofLight = {
         "Blueprint": ["Light Tablet*1", "Rock*10", "Mana Crystal*2", "Gold Bar*2", "Mythril Bar*2"],
         "Craft": ["Dimensional Tablet III"]
     },
-}
+};
 dataStructures = {
     // 火/露营===========================================================================
     "Campfire": {
@@ -408,6 +408,11 @@ dataStructures = {
         "Blueprint": ["Linen*4", "Log*3"],
         "Craft": []
     },
+    "Egg Incubator": {
+        "Requires": ["Ruins of Light III"],
+        "Blueprint": ["Apple Branch*2", "Rope*2", "Log*2"],
+        "Craft": []
+    },
     "Canopy": {
         "Requires": ["Fire Pit"],
         "Blueprint": ["Bush*4", "Branch*3"],
@@ -463,7 +468,89 @@ dataStructures = {
         "Blueprint": ["Strange Symbol Map Fragment*6", "Magic Branch*1"],
         "Craft": []
     },
-}
+};
+dataCrafts = {
+    "Rope": {
+        "Requires": ["Work Bench LV1"],
+        "Blueprint": ["Bush*2"],
+    },
+    "Stone": {
+        "Requires": ["Work Bench LV1"],
+        "Blueprint": ["Rock*1"],
+    },
+    "Leather Strap": {
+        "Requires": ["Tanning Bench", "Work Bench LV1"],
+        "Blueprint": ["Leather*1"],
+    },
+    /*"Leather Strap": {
+        "Requires": ["Tanning Bench", "Work Bench LV1"],
+        "Blueprint": ["Tough Leather*1"],
+    },*/
+    "Charcoal": {
+        "Requires": ["Kiln"],
+        "Blueprint": ["Log*1"],
+    },
+    "Brick": {
+        "Requires": ["Kiln"],
+        "Blueprint": ["Clay*1"],
+    },
+    "Linen": {
+        "Requires": ["Weaver LV1"],
+        "Blueprint": ["Hemp*3"],
+    },
+    "Cobweb Thread": {
+        "Requires": ["Weaver LV1"],
+        "Blueprint": ["Spider Cocoon*2"],
+    },
+    /*"Parchment": {
+        "Requires": ["Tanning Bench"],
+        "Blueprint": ["Tough Hide*1", "Sulfur*1"],
+    },*/
+    "Leather": {
+        "Requires": ["Tanning Bench"],
+        "Blueprint": ["Hide*1"],
+    },
+    "Tough Leather": {
+        "Requires": ["Tanning Bench"],
+        "Blueprint": ["Tough Hide*1"],
+    },
+    "Iron Bar": {
+        "Requires": ["Foundry"],
+        "Blueprint": ["Steel Ore*3", "Log*1"],
+    },
+    "Silver Bar": {
+        "Requires": ["Foundry"],
+        "Blueprint": ["Silver Ore*3", "Log*1"],
+    },
+    "Gold Bar": {
+        "Requires": ["Foundry"],
+        "Blueprint": ["Gold Ore*3", "Log*1"],
+    },
+    "Mercury": {
+        "Requires": ["Foundry"],
+        "Blueprint": ["Mercury Ore*2"],
+    },
+    "Steel Bar": {
+        "Requires": ["Wind Foundry"],
+        "Blueprint": ["Steel Ore*3", "Charcoal*1"],
+    },
+    "Earth Steel Bar": {
+        "Requires": ["Wind Foundry", "Alchemy EQPT"],
+        "Blueprint": ["Steel Ore*4", "Earth Element*1", "Charcoal*1"],
+    },
+    "Black Cast Iron Bar": {
+        "Requires": ["Wind Foundry", "Power Controller"],
+        "Blueprint": ["Steel Ore*4", "Dark Element*1", "Charcoal*1"],
+    },
+    "Platinum Bar": {
+        "Requires": ["Wind Foundry"],
+        "Blueprint": ["Platinum Ore*3", "Charcoal*1"],
+    },
+    "Mythril Bar": {
+        "Requires": ["Wind Foundry", "Ancient Mythril Forge"],
+        "Blueprint": ["Mythril Ore*4", "Charcoal*1"],
+    },
+};
 dataTools = {
     "Torch": {
         "Requires": [],
@@ -609,4 +696,4 @@ dataTools = {
         "Requires": ["Weapon Bench LV1"],
         "Blueprint": ["Bush*1", "Branch*2"]
     },
-}
+};
