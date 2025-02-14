@@ -1081,17 +1081,19 @@
             if (y + (strarr.length - 1) * text_h + draged.y > needHeight) y = canvas.height - (strarr.length - 1) * text_h;
             //整体垫底 ctx.fillRect(x + 1, y - text_h + 1, w1 - 2, (strarr.length) * text_h - 2);
 
+            let y1 = y;
             for (let i = 0; i < strarr.length; i++) {
+                //if (y1 - y + text_h > h) break;
                 // 做个垫底
                 ctx.globalAlpha = 0.6; // 全局半透明
                 let tmpcolor = ctx.fillStyle;
                 ctx.fillStyle = bgcolor;
-                ctx.fillRect(x + 1, y + 1, ctx.measureText(strarr[i]).width - 2, 2 - text_h);
+                ctx.fillRect(x + 1, y1 + 1, ctx.measureText(strarr[i]).width - 2, - text_h);
                 ctx.fillStyle = tmpcolor;
                 ctx.globalAlpha = 1; // 全局不透明
 
-                ctx.fillText(strarr[i], x, y);
-                y += text_h;
+                ctx.fillText(strarr[i], x, y1);
+                y1 += text_h;
             }
         }
         function showDiscription() {
@@ -1165,7 +1167,7 @@
             //}
         };
         canvas.onwheel = e => {
-            fontSize -= Math.abs(e.wheelDelta) / e.wheelDelta;
+            if (e.wheelDelta != 0) fontSize -= Math.abs(e.wheelDelta) / e.wheelDelta;
             if (fontSize < 2) fontSize = 2;
         };
         canvas.ontouchmove = e => mouseMovePos(e);
