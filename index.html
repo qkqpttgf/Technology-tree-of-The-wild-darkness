@@ -155,22 +155,6 @@
                 }
             }
             document.documentElement.lang = language;
-            let div1 = document.getElementById("settingAndDiscription");
-            div1.innerHTML = "";
-            div1.appendChild(document.createTextNode("Language:"));
-            let langselect = document.createElement("select");
-            langselect.setAttribute("onchange", "changeLanguage(this.value);");
-            div1.appendChild(langselect);
-            for (let i = 0; i < Object.keys(languages).length; i++) {
-                l = Object.keys(languages)[i];
-                let option1 = document.createElement("option");
-                option1.value = l;
-                option1.text = languages[l];
-                langselect.appendChild(option1);
-                if (language == l) langselect.selectedIndex = i;
-            }
-            div1.appendChild(document.createElement("br"));
-
             if (language1 != "") {
                 if (document.getElementById("language_" + language1) == null) {
                     let cache = document.createElement("div");
@@ -212,6 +196,32 @@
                 }
             }
             function rebuildDescription() {
+                let div1 = document.getElementById("settingAndDiscription");
+                div1.innerHTML = "";
+
+                // title
+                let title = translate("Technology tree of The wild darkness");
+                document.title = title;
+                let titleh1 = document.createElement("h2");
+                titleh1.appendChild(document.createTextNode(title));
+                div1.appendChild(titleh1);
+                //div1.appendChild(document.createElement("br"));
+
+                // select language
+                div1.appendChild(document.createTextNode("Language:"));
+                let langselect = document.createElement("select");
+                langselect.setAttribute("onchange", "changeLanguage(this.value);");
+                div1.appendChild(langselect);
+                for (let i = 0; i < Object.keys(languages).length; i++) {
+                    l = Object.keys(languages)[i];
+                    let option1 = document.createElement("option");
+                    option1.value = l;
+                    option1.text = languages[l];
+                    langselect.appendChild(option1);
+                    if (language == l) langselect.selectedIndex = i;
+                }
+                div1.appendChild(document.createElement("br"));
+
                 // click logo
                 //document.createTextNode(translate("Click the Logo on left to close/open the description."));
                 let clickLogo = document.createElement("span");
@@ -220,7 +230,7 @@
                 clickLogo.style.color = "#de4689";
                 div1.appendChild(clickLogo);
                 div1.appendChild(document.createElement("br"));
-                div1.appendChild(document.createElement("br"));
+
                 // show images
                 let label1 = document.createElement("label");
                 div1.appendChild(label1);
@@ -231,7 +241,7 @@
                 input1.setAttribute("onclick", "loadImages(this);");
                 if (showImage) input1.setAttribute("checked", "");
                 label1.appendChild(input1);
-                label1.appendChild(document.createTextNode(translate("Show picture in box.")));
+                label1.appendChild(document.createTextNode(translate("Show images for Structures and Items")));
                 /*div1.appendChild(document.createTextNode(" ("));
                 let a1 = document.createElement("a");
                 a1.href = "https://the-wild-darkness.fandom.com";
@@ -239,6 +249,7 @@
                 div1.appendChild(a1);
                 div1.appendChild(document.createTextNode(")"));*/
                 div1.appendChild(document.createElement("br"));
+
                 // difficult level
                 div1.appendChild(document.createTextNode(translate("Difficulty Level")));
                 div1.appendChild(document.createTextNode(":"));
@@ -255,6 +266,7 @@
                     label1.appendChild(document.createTextNode(translate(difficulty)));
                 });
                 div1.appendChild(document.createElement("br"));
+
                 // input to fix
                 input1 = document.createElement("input");
                 input1.id = "select1";
@@ -271,6 +283,7 @@
                 button1.innerHTML = translate("clear fixing");
                 div1.appendChild(button1);
                 div1.appendChild(document.createElement("br"));
+
                 // description
                 let span1 = document.createElement("span");
                 div1.appendChild(span1);
