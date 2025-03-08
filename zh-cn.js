@@ -1,7 +1,8 @@
 
 dataTranslation = {
+    "Technology tree of The wild darkness": "《The wild darkness》科技树",
     "Click the Logo on left to close/open the description.": "点击左侧Logo图片来关闭与打开此说明",
-    "Show picture in box.": "在方框中显示图片",
+    "Show images for Structures and Items": "显示建筑与物品的图像",
     "Difficulty Level": "难度",
     "standard": "普通",
     "difficult": "困难",
