@@ -108,7 +108,7 @@
         var difficultyLevel = difficultyLevels[0], difficultyLevel1 = "";
         var languages = { "en": "English", "zh-cn": "简体中文", "zh-tw": "繁體中文" };
         var language = Object.keys(languages)[0], language1 = "";
-        var dataTranslation = null;
+        var dataTranslation;
         var rightSide_R = 0, rightSide_S = 0, rightSide_I = 0;
         changeLanguage();
 
@@ -139,7 +139,7 @@
             loadConfig();
         }
         function changeLanguage(lang) {
-            dataTranslation = null;
+            dataTranslation = new Object();
             if (lang != null) {
                 language = lang;
             } else {
@@ -747,11 +747,11 @@
                     ctx.font = "" + font1 + "px sans-serif";
                     writeText(str, canvas.width / 2 - ctx.measureText(str).width / 2, canvas.height / 2 - font1 / 2, canvas.width, canvas.height);
                 }
-                requestAnimationFrame(mainloop);
             } catch (e) {
                 //document.getElementById("err1").innerHTML = e.stack || e;
                 console.log(e.stack || e)
             }
+            requestAnimationFrame(mainloop);
         }
         function main() {
             let Hovering1 = "";
