@@ -118,8 +118,8 @@
                 let div1 = document.getElementById("images");
                 Object.keys(blocks).forEach(e => {
                     let s = e;
-                    if (e in dataRuinsofLight || e.substr(e.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
-                        s = e.substr(0, e.lastIndexOf(" "));
+                    if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
+                        s = s.substr(0, s.lastIndexOf(" "));
                     }
                     if (!document.getElementById(s)) {
                         let img = document.createElement("img");
@@ -618,25 +618,27 @@
             // name, tree, area
             let p = 0;
             let ba = Object.keys(b).sort();
-            for (let i = 0; i < ba.length; i++) {
-                let e = ba[i];
-                if ("Upgrade" in blocks[e] && blocks[e]["Upgrade"] !== "") {
-                    p += loopTreeX(blocks[e]["Upgrade"], b[e][blocks[e]["Upgrade"]], { x: a.x + p, y: a.y + 1 });
-                }
-                if (n != "" && "Upgrade" in blocks[n] && e == blocks[n]["Upgrade"]) {
-                    blocks[e].position.x = a.x;
-                } else {
-                    if (blocks[e].position.x == 0) {
-                        p++;
-                        blocks[e].position.x = a.x + p;
-                    }
-                }
+            if (n != "" && "Upgrade" in blocks[n] && blocks[n]["Upgrade"] != "") {
+                let e = blocks[n]["Upgrade"];
+                //blocks[e].position.x = a.x;
+                blocks[e].position.x = blocks[n].position.x;
                 blocks[e].position.y = a.y + 1;
                 if (Object.keys(b[e]).length > 0) {
-                    p += loopTreeX(e, b[e], JSON.parse(JSON.stringify(blocks[e].position)));
+                    p += loopTreeX(e, b[e], { x: a.x, y: a.y + 1 });
                 }
             }
-            //console.log(n, a, p);
+            for (let i = 0; i < ba.length; i++) {
+                let e = ba[i];
+                if (n != "" && "Upgrade" in blocks[n] && e == blocks[n]["Upgrade"]) {
+                    continue;
+                }
+                p++;
+                blocks[e].position.x = a.x + p;
+                blocks[e].position.y = a.y + 1;
+                if (Object.keys(b[e]).length > 0) {
+                    p += loopTreeX(e, b[e], { x: a.x + p, y: a.y + 1 });
+                }
+            }
             return p;
         }
         function loopTreeY() {
@@ -837,11 +839,11 @@
                     ctx.fillStyle = ctx.strokeStyle;
                     tmpx = document.body.clientWidth - blocks[Hovering].pos.w;
                 }
-                let s = Hovering;
-                if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
-                    s = s.substr(0, s.lastIndexOf(" "));
-                }
                 if (showImage && tmpx == blocks[Hovering].pos.x) {
+                    let s = Hovering;
+                    if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
+                        s = s.substr(0, s.lastIndexOf(" "));
+                    }
                     if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx + 1, blocks[Hovering].pos.y + 1, blocks[Hovering].pos.w - 2, blocks[Hovering].pos.h - 2);
                     writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y - border * 2, canvas.height, blocks[Hovering].pos.h);
                 } else {
@@ -1010,11 +1012,11 @@
                         tmpx = document.body.clientWidth - blocks[e].pos.w;
                     }
                     //let name = e + "\n" + blocks[e].position.x + "," + blocks[e].position.y;
-                    let s = e;
-                    if (e in dataRuinsofLight || e.substr(e.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
-                        s = e.substr(0, e.lastIndexOf(" "));
-                    }
                     if (showImage && tmpx == blocks[e].pos.x) {
+                        let s = e;
+                        if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
+                            s = s.substr(0, s.lastIndexOf(" "));
+                        }
                         if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx + 1, blocks[e].pos.y + 1, blocks[e].pos.w - 2, blocks[e].pos.h - 2);
                         if (stroked) writeText(translate(e), tmpx, blocks[e].pos.y - border * 2, canvas.height, blocks[e].pos.h);
                     } else {
