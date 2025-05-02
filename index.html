@@ -687,8 +687,6 @@
                 //console.log(e,blocks[e],r,blocks[r]);
                 //    if (r in blocks) if (blocks[e].pos.y < blocks[r].pos.y + blockHeight) blocks[e].pos.y = blocks[r].pos.y + blockHeight;
                 //});
-                //bugreport(e, blocks[e].pos.x, rightSide_S);
-
             });
             return blocks1;
         }
@@ -700,7 +698,6 @@
                         if (blocks[e].position.x == blocks[c].position.x && blocks[e].position.y == blocks[c].position.y) blocks[c].position.x += 1;
                     }
                     if (blocks[c].position.x >= rightSide_I) rightSide_I = blocks[c].position.x + 1;
-                    //bugreport(blocks[c].pos.x + blocks[c].pos.w, rightSide_I)
                 });
             });
             return blocks1;
@@ -713,14 +710,17 @@
                         if (blocks[e].position.x == blocks[c].position.x && blocks[e].position.y == blocks[c].position.y) blocks[c].position.x += 1;
                     }
                     //if (blocks[c].position.x >= rightSide_I) rightSide_I = blocks[c].position.x + 1;
-                    //bugreport(blocks[c].pos.x + blocks[c].pos.w, rightSide_I)
                 });
             });
             return blocks1;
         }
-        var debug = 5, debugTarget = "熔炉";
-        function bugreport(...e) {
-            if (debug > 0) console.log(...e);
+        function imageLoaded(e) {
+            let s = e;
+            if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
+                s = s.substr(0, s.lastIndexOf(" "));
+            }
+            if (document.getElementById(s) && document.getElementById(s).alt == "loaded") return document.getElementById(s);
+            else return null;
         }
         var canvas = document.getElementById("main");
         var ctx = canvas.getContext("2d");
@@ -771,7 +771,6 @@
             sideTop = sideBottom;
             //canvas.width = document.body.clientWidth < needWidth ? document.body.clientWidth : needWidth;
             //canvas.height = document.documentElement.clientHeight - head.offsetHeight < needHeight ? document.documentElement.clientHeight - head.offsetHeight : needHeight;
-            //canvas.setAttribute("loop", debug);
             ctx.fillStyle = bgcolor;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             //ctx.strokeRect(1, 1, canvas.width - 2, canvas.height - 2);
@@ -839,12 +838,9 @@
                     ctx.fillStyle = ctx.strokeStyle;
                     tmpx = document.body.clientWidth - blocks[Hovering].pos.w;
                 }
-                if (showImage && tmpx == blocks[Hovering].pos.x) {
-                    let s = Hovering;
-                    if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
-                        s = s.substr(0, s.lastIndexOf(" "));
-                    }
-                    if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx + 1, blocks[Hovering].pos.y + 1, blocks[Hovering].pos.w - 2, blocks[Hovering].pos.h - 2);
+                let s = imageLoaded(Hovering);
+                if (showImage && tmpx == blocks[Hovering].pos.x && s) {
+                    ctx.drawImage(s, tmpx + 1, blocks[Hovering].pos.y + 1, blocks[Hovering].pos.w - 2, blocks[Hovering].pos.h - 2);
                     writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y - border * 2, canvas.height, blocks[Hovering].pos.h);
                 } else {
                     writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y + getFontHeight(), blocks[Hovering].pos.w, blocks[Hovering].pos.h);
@@ -885,20 +881,6 @@
             } else {
                 Hovering = existInput();
             }
-
-            debug--;
-            /*if (JSON.stringify(blocks) != blocks1) {
-                let img = document.createElement("img");
-                img.src = canvas.toDataURL();
-                img.width = 100;
-                img.title = debug;
-                img.style.margin = "2px";
-                document.getElementById("err1").appendChild(img);
-                //console.log(debug, blocks, blocks1);
-                blocks1 = JSON.stringify(blocks);
-            }
-            if (lightLines["光明遗迹 VI"] > 100) throw "向下掉";
-            if (rightSide_I > 100) throw "向右扩";*/
 
             function draw(e) {
                 ctx.strokeStyle = "black";
@@ -1012,12 +994,9 @@
                         tmpx = document.body.clientWidth - blocks[e].pos.w;
                     }
                     //let name = e + "\n" + blocks[e].position.x + "," + blocks[e].position.y;
-                    if (showImage && tmpx == blocks[e].pos.x) {
-                        let s = e;
-                        if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
-                            s = s.substr(0, s.lastIndexOf(" "));
-                        }
-                        if (document.getElementById(s) && document.getElementById(s).alt == "loaded") ctx.drawImage(document.getElementById(s), tmpx + 1, blocks[e].pos.y + 1, blocks[e].pos.w - 2, blocks[e].pos.h - 2);
+                    let s = imageLoaded(e);
+                    if (showImage && tmpx == blocks[e].pos.x && s) {
+                        ctx.drawImage(s, tmpx + 1, blocks[e].pos.y + 1, blocks[e].pos.w - 2, blocks[e].pos.h - 2);
                         if (stroked) writeText(translate(e), tmpx, blocks[e].pos.y - border * 2, canvas.height, blocks[e].pos.h);
                     } else {
                         writeText(translate(e), tmpx, blocks[e].pos.y + getFontHeight(), blocks[e].pos.w, blocks[e].pos.h);
@@ -1025,7 +1004,6 @@
                     ctx.stroke();
                 }
 
-                //if (e == debugTarget) bugreport("7", blocks[e].position);
                 ctx.font = font;
                 ctx.strokeStyle = "black";
                 ctx.fillStyle = "black";
