@@ -222,7 +222,7 @@ dataStructures = {
         "Craft": []
     },
     "Apprentice's Desk": {
-        "Requires": ["Canopy"],
+        "Requires": ["Ruins of Light I", "Canopy"],
         "Blueprint": ["Branch*2", "Log*2"],
         "Craft": []
     },
@@ -242,7 +242,7 @@ dataStructures = {
         "Craft": ["Magic Branch"]
     },
     "Meditation Study": {
-        "Requires": ["Apprentice's Desk", "Ruins of Light II"],
+        "Requires": ["Apprentice's Desk"],
         "Blueprint": ["Apple Branch*2", "Mana Crystal*1", "Ghost Mushroom*2", "Log*2"],
         "Craft": []
     },
@@ -279,6 +279,11 @@ dataStructures = {
     "Barrel": {
         "Requires": ["Fermented Jar", "Storage Pot"],
         "Blueprint": ["Apple Branch*2", "Rope*2", "Log*4", "Iron Bar*1"],
+        "Craft": []
+    },
+    "Abyss of Dream's machine": {
+        "Requires": ["Apprentice's Desk", "Meditation Study"],
+        "Blueprint": ["Debris of nightmares*1", "Mana Mote*2", "Silver Bar*1", "Gold Bar*1"],
         "Craft": []
     },
     "Ancient Mythril Forge": {
