@@ -110,6 +110,8 @@ dataTranslation = {
     "Strange Magical Symbol": "奇怪的魔法圖案",
     "Ancient Mythril Forge": "古代秘銀鐵匠鋪",
     "Egg Incubator": "蛋孵化器",
+    "Abyss of Dream's machine": "夢之深淵機器",
+    "Debris of nightmares": "惡夢碎片",
 
     "Light Tablet": "光明碑牌",
     "Dimensional Tablet": "次元碑牌",
