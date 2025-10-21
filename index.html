@@ -56,7 +56,7 @@
         </tr>
     </table>
     <canvas id="main" style="width: 100%; height: 100%;"></canvas>
-    <div id="images" style="display: none;"></div>
+    <img id="images" style="display: none;">
     <div id="languageStore" style="display: none;"></div>
     <div id="configStore" style="display: none;"></div>
 </body>
@@ -81,8 +81,11 @@
     }, {
         passive: false
     });
+    var texture = document.getElementById("images");
+
     class block {
         name = "";
+        Texture = { x1: 0, y1: 0, x2: 0, y2: 0, r: 0 };
         base = ""; // 基于几本
         Requires = []; // 前置科技
         HiddenRequires = []; // 隐藏前置科技
@@ -222,12 +225,6 @@
             if (showImage) input1.setAttribute("checked", "");
             label1.appendChild(input1);
             label1.appendChild(document.createTextNode(translate("Show images for Structures and Items")));
-            /*div1.appendChild(document.createTextNode(" ("));
-            let a1 = document.createElement("a");
-            a1.href = "https://the-wild-darkness.fandom.com";
-            a1.text = "https://the-wild-darkness.fandom.com";
-            div1.appendChild(a1);
-            div1.appendChild(document.createTextNode(")"));*/
             div1.appendChild(document.createElement("br"));
 
             // difficult level
@@ -413,17 +410,18 @@
             select2.innerHTML = "";
             Object.keys(dataRuinsofLight).forEach(e => {
                 lightLines[e] = 0;
+                let tmp1 = document.createElement("option");
+                tmp1.value = translate(e);
+                tmp1.text = e;
+                select2.appendChild(tmp1);
                 let tmp = new RuinsofLight();
                 tmp.name = e;
+                tmp.Texture = dataRuinsofLight[e].Texture || {};
                 tmp.Map = dataRuinsofLight[e].Map;
                 tmp.Requires = dataRuinsofLight[e].Requires || [];
                 tmp.Blueprint = dataRuinsofLight[e].Blueprint || [];
                 tmp.Craft = dataRuinsofLight[e].Craft || [];
                 blocks[e] = tmp;
-                let tmp1 = document.createElement("option");
-                tmp1.value = translate(e);
-                tmp1.text = e;
-                select2.appendChild(tmp1);
             });
             dataStructures = sortObject(dataStructures);
             Object.keys(dataStructures).forEach(e => {
@@ -433,6 +431,7 @@
                 select2.appendChild(tmp1);
                 let tmp = new Structures();
                 tmp.name = e;
+                tmp.Texture = dataStructures[e].Texture || {};
                 if ("Map" in dataStructures[e]) tmp.Map = dataStructures[e].Map;
                 tmp.Requires = dataStructures[e].Requires || [];
                 tmp.Blueprint = dataStructures[e].Blueprint || [];
@@ -447,6 +446,7 @@
                 select2.appendChild(tmp1);
                 let tmp = new Items();
                 tmp.name = e;
+                tmp.Texture = dataCrafts[e].Texture || {};
                 tmp.Requires = dataCrafts[e].Requires || [];
                 tmp.Blueprint = dataCrafts[e].Blueprint || [];
                 blocks[e] = tmp;
@@ -459,6 +459,7 @@
                 select2.appendChild(tmp1);
                 let tmp = new Items();
                 tmp.name = e;
+                tmp.Texture = dataTools[e].Texture || {};
                 tmp.Requires = dataTools[e].Requires || [];
                 tmp.Blueprint = dataTools[e].Blueprint || [];
                 blocks[e] = tmp;
@@ -695,32 +696,42 @@
     function loadImages(c) {
         if (c) showImage = c.checked;
         if (showImage) {
-            let div1 = document.getElementById("images");
-            Object.keys(blocks).forEach(e => {
-                let s = e;
-                if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
-                    s = s.substr(0, s.lastIndexOf(" "));
-                }
-                if (!document.getElementById(s)) {
-                    let img = document.createElement("img");
-                    img.src = "images/".concat(s).concat(".png");
-                    img.id = s;
-                    img.alt = "";
-                    div1.appendChild(img);
-                    img.onload = () => {
-                        img.alt = "loaded";
-                    };
-                }
-            });
+            texture.src = "image.png";
+            texture.onload = () => {
+                texture.alt = "loaded";
+            };
         }
     }
-    function imageLoaded(e) {
-        let s = e;
-        if (s in dataRuinsofLight || s.substr(s.lastIndexOf(" ") + 1).substr(0, 2) == "LV") {
-            s = s.substr(0, s.lastIndexOf(" "));
+    function drawImages(e, hovering) {
+        let s = {
+            x: blocks[e].Texture.x1,
+            y: blocks[e].Texture.y1,
+            w: blocks[e].Texture.x2 - blocks[e].Texture.x1,
+            h: blocks[e].Texture.y2 - blocks[e].Texture.y1
+        };
+        let c = {
+            x: blocks[e].pos.x,
+            y: blocks[e].pos.y,
+            w: blocks[e].pos.w,
+            h: blocks[e].pos.h,
+        };
+        let t = { w: c.w, h: c.h };
+        //if (hovering) {
+        //    if (s.w > s.h) t.w = s.w * c.h / s.h;
+        //    else t.h = s.h * c.w / s.w;
+        //} else {
+        if (s.w > s.h) t.h = s.h * c.w / s.w;
+        else t.w = s.w * c.h / s.h;
+        //}
+        if (blocks[e].Texture.r) {
+            ctx.translate(c.x + c.w, c.y);
+            ctx.rotate(Math.PI / 2);
+            ctx.drawImage(texture, s.x, s.y, s.w, s.h, (c.w - t.w) / 2 + 1, (c.h - t.h) / 2 + 1, t.w - 2, t.h - 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.translate(-c.x - c.w, -c.y);
+        } else {
+            ctx.drawImage(texture, s.x, s.y, s.w, s.h, c.x + (c.w - t.w) / 2 + 1, c.y + (c.h - t.h) / 2 + 1, t.w - 2, t.h - 2);
         }
-        if (document.getElementById(s) && document.getElementById(s).alt == "loaded") return document.getElementById(s);
-        else return null;
     }
     var canvas = document.getElementById("main");
     var ctx = canvas.getContext("2d");
@@ -741,13 +752,13 @@
         canvas.width = document.body.clientWidth;
         canvas.height = document.documentElement.clientHeight;
         try {
-            if (Object.keys(blocks).length > 0) {
-                main();
-            } else {
+            if (Object.keys(blocks).length < 1 || (showImage && texture.alt != "loaded")) {
                 let str = "Loading...";
                 let font1 = 50;
                 ctx.font = "" + font1 + "px sans-serif";
                 writeText(str, canvas.width / 2 - ctx.measureText(str).width / 2, canvas.height / 2 - font1 / 2, canvas.width, canvas.height);
+            } else {
+                main();
             }
         } catch (e) {
             //document.getElementById("err1").innerHTML = e.stack || e;
@@ -838,9 +849,8 @@
                 ctx.fillStyle = ctx.strokeStyle;
                 tmpx = document.body.clientWidth - blocks[Hovering].pos.w;
             }
-            let s = imageLoaded(Hovering);
-            if (showImage && tmpx == blocks[Hovering].pos.x && s) {
-                ctx.drawImage(s, tmpx + 1, blocks[Hovering].pos.y + 1, blocks[Hovering].pos.w - 2, blocks[Hovering].pos.h - 2);
+            if (showImage && tmpx == blocks[Hovering].pos.x && texture.alt == "loaded") {
+                drawImages(Hovering, 1);
                 writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y - border * 2, canvas.height, blocks[Hovering].pos.h);
             } else {
                 writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y + getFontHeight(), blocks[Hovering].pos.w, blocks[Hovering].pos.h);
@@ -994,9 +1004,8 @@
                     tmpx = document.body.clientWidth - blocks[e].pos.w;
                 }
                 //let name = e + "\n" + blocks[e].position.x + "," + blocks[e].position.y;
-                let s = imageLoaded(e);
-                if (showImage && tmpx == blocks[e].pos.x && s) {
-                    ctx.drawImage(s, tmpx + 1, blocks[e].pos.y + 1, blocks[e].pos.w - 2, blocks[e].pos.h - 2);
+                if (showImage && tmpx == blocks[e].pos.x && texture.alt == "loaded") {
+                    drawImages(e);
                     if (stroked) writeText(translate(e), tmpx, blocks[e].pos.y - border * 2, canvas.height, blocks[e].pos.h);
                 } else {
                     writeText(translate(e), tmpx, blocks[e].pos.y + getFontHeight(), blocks[e].pos.w, blocks[e].pos.h);
