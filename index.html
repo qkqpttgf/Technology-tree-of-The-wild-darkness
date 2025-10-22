@@ -726,11 +726,11 @@
         if (blocks[e].Texture.r) {
             ctx.translate(c.x + c.w, c.y);
             ctx.rotate(Math.PI / 2);
-            ctx.drawImage(texture, s.x, s.y, s.w, s.h, (c.w - t.w) / 2 + 1, (c.h - t.h) / 2 + 1, t.w - 2, t.h - 2);
+            ctx.drawImage(texture, s.x, s.y, s.w, s.h, (c.w - t.w) / 2, (c.h - t.h) / 2, t.w, t.h);
             ctx.rotate(-Math.PI / 2);
             ctx.translate(-c.x - c.w, -c.y);
         } else {
-            ctx.drawImage(texture, s.x, s.y, s.w, s.h, c.x + (c.w - t.w) / 2 + 1, c.y + (c.h - t.h) / 2 + 1, t.w - 2, t.h - 2);
+            ctx.drawImage(texture, s.x, s.y, s.w, s.h, c.x + (c.w - t.w) / 2, c.y + (c.h - t.h) / 2, t.w, t.h);
         }
     }
     var canvas = document.getElementById("main");
@@ -849,7 +849,7 @@
                 ctx.fillStyle = ctx.strokeStyle;
                 tmpx = document.body.clientWidth - blocks[Hovering].pos.w;
             }
-            if (showImage && tmpx == blocks[Hovering].pos.x && texture.alt == "loaded") {
+            if (showImage && tmpx == blocks[Hovering].pos.x) {
                 drawImages(Hovering, 1);
                 writeText(translate(Hovering), tmpx, blocks[Hovering].pos.y - border * 2, canvas.height, blocks[Hovering].pos.h);
             } else {
@@ -907,23 +907,18 @@
                 blocks[e].pos.y = sideTop + blocks[e].position.y * (blockHeight + 1) + blockHeight / 2 - text_h * 2 - draged.y;
                 blocks[e].pos.w = text_h * 4 + 1;
                 blocks[e].pos.h = text_h * 4 + 1;
-                ctx.beginPath();
-                ctx.rect(blocks[e].pos.x, blocks[e].pos.y, blocks[e].pos.w, blocks[e].pos.h);
-                ctx.closePath();
-                //ctx.stroke();
                 stroked = true;
             } else {
                 blocks[e].pos.x = sideLeft + blocks[e].position.x * (blockWidth + 1) + border - draged.x;
                 blocks[e].pos.y = sideTop + blocks[e].position.y * (blockHeight + 1) + border - draged.y;
                 blocks[e].pos.w = blockWidth - border * 2 + 1;
                 blocks[e].pos.h = blockHeight - border * 2 + 1;
-                ctx.beginPath();
-                ctx.rect(blocks[e].pos.x, blocks[e].pos.y, blocks[e].pos.w, blocks[e].pos.h);
-                ctx.closePath();
             }
-            if (ctx.isPointInPath(X, Y)) {
-                Hovering1 = e;
-            }
+            ctx.beginPath();
+            ctx.rect(blocks[e].pos.x, blocks[e].pos.y, blocks[e].pos.w, blocks[e].pos.h);
+            ctx.closePath();
+            if (ctx.isPointInPath(X, Y)) Hovering1 = e;
+
             if (Hovering != "") {
                 if ("Requires" in blocks[Hovering] && blocks[Hovering].Requires.indexOf(e) > -1) {
                     ctx.strokeStyle = "red";
@@ -1004,7 +999,7 @@
                     tmpx = document.body.clientWidth - blocks[e].pos.w;
                 }
                 //let name = e + "\n" + blocks[e].position.x + "," + blocks[e].position.y;
-                if (showImage && tmpx == blocks[e].pos.x && texture.alt == "loaded") {
+                if (showImage && tmpx == blocks[e].pos.x) {
                     drawImages(e);
                     if (stroked) writeText(translate(e), tmpx, blocks[e].pos.y - border * 2, canvas.height, blocks[e].pos.h);
                 } else {
@@ -1141,16 +1136,22 @@
         draged.y = beforDrag.y0 + (beforDrag.y - endDrag.y) * (Math.abs(beforDrag.y - endDrag.y) > 10 ? Math.log10(Math.abs(beforDrag.y - endDrag.y)) : 1);
     }
     function resetDrag() {
-        let thin = canvas.width < canvas.height ? canvas.width : canvas.height;
-        if (blockWidth * 5 > thin) {
-            fontSize = Math.floor((thin / 5 - border * 2) / 3);
-            blockWidth = fontSize * 3 + border * 2;
-            blockHeight = blockWidth;
-        }
         if (draged.x + document.body.clientWidth > needWidth) draged.x = needWidth - document.body.clientWidth;
         if (draged.x < 0) draged.x = 0;
         if (draged.y + document.documentElement.clientHeight > needHeight) draged.y = needHeight - document.documentElement.clientHeight;
         if (draged.y < 0) draged.y = 0;
+    }
+    function checkFontsizeInZoom() {
+        if (fontSize < 2) fontSize = 2;
+        let thin = canvas.width < canvas.height ? canvas.width : canvas.height;
+        let blockWidth1 = fontSize * 3 + border * 2;
+        if (blockWidth1 * 5 > thin) {
+            fontSize = Math.floor((thin / 5 - border * 2) / 3);
+            blockWidth1 = fontSize * 3 + border * 2;
+        }
+        let s = (fontSize * 3 + border * 2) / blockWidth;
+        draged.x = (draged.x + X) * s - X;
+        draged.y = (draged.y + Y) * s - Y;
     }
     canvas.onmousemove = e => mouseMovePos(e);
     canvas.onmousedown = e => {
@@ -1170,7 +1171,7 @@
     };
     canvas.onwheel = e => {
         if (e.wheelDelta != 0) fontSize -= Math.abs(e.wheelDelta) / e.wheelDelta;
-        if (fontSize < 2) fontSize = 2;
+        checkFontsizeInZoom();
     };
     canvas.ontouchmove = e => mouseMovePos(e);
     canvas.ontouchstart = e => {
@@ -1185,7 +1186,7 @@
             canvas.ontouchmove = e => {
                 let endDrag = Math.sqrt((e.touches[0].clientX - e.touches[1].clientX) * (e.touches[0].clientX - e.touches[1].clientX) + (e.touches[0].clientY - e.touches[1].clientY) * (e.touches[0].clientY - e.touches[1].clientY));
                 fontSize = Math.floor((endDrag / beforDrag.d) * beforDrag.s);
-                if (fontSize < 2) fontSize = 2;
+                checkFontsizeInZoom();
             };
         }
         canvas.ontouchend = e => {
